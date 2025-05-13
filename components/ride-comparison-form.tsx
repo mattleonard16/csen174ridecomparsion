@@ -32,11 +32,20 @@ export default function RideComparisonForm() {
         throw new Error("Network error")
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error("Failed to fetch ride comparisons")
+        // Check for geocoding error
+        if (data.error && data.error.includes("geocode")) {
+          setError("Please enter a more specific or valid address for both pickup and destination.")
+        } else if (data.error && data.error.includes("required")) {
+          setError("Both pickup and destination addresses are required.")
+        } else {
+          setError("Failed to fetch ride comparisons. Please try again.")
+        }
+        return
       }
 
-      const data = await response.json()
       setResults(data.comparisons)
       setInsights(data.insights)
     } catch (error) {
