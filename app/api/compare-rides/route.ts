@@ -1,5 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 
+// limit api request to 1 per second per device
+await new Promise(resolve => setTimeout(resolve, 1000))
+
 // POST handler
 export async function POST(request: NextRequest) {
   try {
@@ -68,9 +71,12 @@ async function getDistanceInKm(pickupCoords: [number, number], destCoords: [numb
 async function getRideComparisons(pickupCoords: [number, number], destCoords: [number, number]) {
   const distanceKm = await getDistanceInKm(pickupCoords, destCoords)
 
-  const baseFare = 2.5
-  const perKmRate = 1.75
-  const uberPriceRaw = baseFare + perKmRate * distanceKm
+  const uberBaseFare = 2.5
+  const uberPerKmRate = 1.75
+  const uberPriceRaw = uberBaseFare + uberPerKmRate * distanceKm
+  const lyftBaseFare = 4.5
+  const lyftPerKmRate = 1.65
+  const lyftPriceRaw = lyftBaseFare + lyftPerKmRate * distanceKm
 
   const baseWaitTime = 2 + Math.floor(Math.random() * 5)
 
@@ -82,7 +88,7 @@ async function getRideComparisons(pickupCoords: [number, number], destCoords: [n
       service: "UberX",
     },
     lyft: {
-      price: `$${(15 + Math.random() * 10 * 0.95).toFixed(2)}`,
+      price: `$${lyftPriceRaw.toFixed(2)}`,
       waitTime: `${baseWaitTime + 1} min`,
       driversNearby: Math.floor(2 + Math.random() * 4),
       service: "Lyft Standard",
