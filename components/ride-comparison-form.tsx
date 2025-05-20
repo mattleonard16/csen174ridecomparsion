@@ -1,6 +1,14 @@
 "use client"
 
-import { useState } from "react"
+//To use during the Google Places API script loading
+declare global {
+  interface Window {
+    google: any
+  }
+}
+export { }
+
+import { useState, useEffect, useRef } from "react"
 import { MapPin, Navigation2, Loader2 } from "lucide-react"
 import RideComparisonResults from "./ride-comparison-results"
 
@@ -12,12 +20,119 @@ export default function RideComparisonForm() {
   const [insights, setInsights] = useState("")
   const [error, setError] = useState("")
 
-  const handleSubmit = async (e) => {
+  //Loads Google Places API and attached autocomplete to the input fields
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (!document.getElementById("google-places-script")) {
+      const script = document.createElement("script");
+      script.id = "google-places-script";
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places,geometry,marker`
+      script.async = true;
+
+      script.onload = () => {
+        if (window.google && window.google.maps.places.PlaceAutocompleteElement) {
+          // Pickup
+          const pickupDiv = document.getElementById("pickup-autocomplete");
+          if (pickupDiv && !pickupDiv.hasChildNodes()) {
+            const pickupAutocomplete = new window.google.maps.places.PlaceAutocompleteElement();
+            pickupDiv.appendChild(pickupAutocomplete);
+            pickupAutocomplete.addEventListener("gmp-placeautocomplete-placechanged", () => {
+              const place = pickupAutocomplete.getPlace();
+              setPickup(place.formatted_address || place.name || "");
+            });
+          }
+          // Destination
+          const destinationDiv = document.getElementById("destination-autocomplete");
+          if (destinationDiv && !destinationDiv?.hasChildNodes()) {
+            const destinationAutocomplete = new window.google.maps.places.PlaceAutocompleteElement();
+            destinationDiv.appendChild(destinationAutocomplete);
+            destinationAutocomplete.addEventListener("gmp-placeautocomplete-placechanged", () => {
+              const place = destinationAutocomplete.getPlace()
+              setDestination(place.formatted_address || place.name || "")
+            });
+          }
+        }
+      };
+
+      document.body.appendChild(script)
+    } else {
+      // If script already exists, just clean and re-attach the autocomplete elements
+      if (window.google && window.google.maps.places.PlaceAutocompleteElement) {
+        const pickupDiv = document.getElementById("pickup-autocomplete");
+        if (pickupDiv) pickupDiv.innerHTML = "";
+        const destinationDiv = document.getElementById("destination-autocomplete");
+        if (destinationDiv) destinationDiv.innerHTML = "";
+
+        if (pickupDiv && !pickupDiv.hasChildNodes()) {
+          const pickupAutocomplete = new window.google.maps.places.PlaceAutocompleteElement();
+          pickupDiv.appendChild(pickupAutocomplete);
+          pickupAutocomplete.addEventListener("gmp-placeautocomplete-placechanged", () => {
+            const place = pickupAutocomplete.getPlace();
+            setPickup(place?.formatted_address || "");
+          });
+        }
+        if (destinationDiv && !destinationDiv.hasChildNodes()) {
+          const destinationAutocomplete = new window.google.maps.places.PlaceAutocompleteElement();
+          destinationDiv.appendChild(destinationAutocomplete);
+          destinationAutocomplete.addEventListener("gmp-placeautocomplete-placechanged", () => {
+            const place = destinationAutocomplete.getPlace();
+            setDestination(place?.formatted_address || "");
+          });
+        }
+      }
+    }
+
+    return () => {
+      //Clean up the autocomplete elements
+      const pickupDiv = document.getElementById("pickup-autocomplete")
+      if (pickupDiv) pickupDiv.innerHTML = ""
+      const destinationDiv = document.getElementById("destination-autocomplete")
+      if (destinationDiv) destinationDiv.innerHTML = ""
+    }
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
     setResults(null)
     setInsights("")
     setError("")
+
+    // Extract values from Shadow DOM manually
+    const pickupInput = document
+      .querySelector("pickup-autocomplete gmp-place-autocomplete")
+      ?.shadowRoot?.querySelector("input");
+
+    const destinationInput = document
+      .querySelector("destination-autocomplete gmp-place-autocomplete")
+      ?.shadowRoot?.querySelector("input");
+
+    const pickupValue = pickup.trim() || (pickupInput as HTMLInputElement)?.value?.trim() || "";
+    const destinationValue = destination.trim() || (destinationInput as HTMLInputElement)?.value?.trim() || "";
+
+
+    // // Helper to get value from PlaceAutocompleteElement input
+    // function getAutocompleteInputValue(containerId: string) {
+    //   const div = document.getElementById(containerId)
+    //   if (!div) return ""
+    //   const gmpElem = div.querySelector("gmp-place-autocomplete")
+    //   // Try shadow DOM first
+    //   if (gmpElem && gmpElem.shadowRoot) {
+    //     const input = gmpElem.shadowRoot.querySelector("input")
+    //     if (input && input.value.trim()) return input.value.trim()
+    //   }
+    //   // Fallback: try direct input (shouldn't happen, but just in case)
+    //   const input = div.querySelector("input")
+    //   if (input && input.value.trim()) return input.value.trim()
+    //   return ""
+    // }
+
+    if (!pickupValue || !destinationValue) {
+      setIsLoading(false)
+      setError("Both pickup and destination addresses are required.")
+      return
+    }
 
     try {
       // Call the API route
@@ -26,7 +141,7 @@ export default function RideComparisonForm() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ pickup, destination }),
+        body: JSON.stringify({ pickup: pickupValue, destination: destinationValue }),
       }).catch((error) => {
         console.error("Fetch error:", error)
         throw new Error("Network error")
@@ -90,57 +205,63 @@ export default function RideComparisonForm() {
           <div className="space-y-2">
             <div className="flex items-center">
               <MapPin className="h-5 w-5 text-gray-500 mr-2" />
-              <label htmlFor="pickup" className="font-medium">
+              <label htmlFor="pickup-autocomplete" className="font-medium">
                 Pickup Location
               </label>
             </div>
-            <input
+            {/* <div id="pickup-autocomplete" className="w-full p-2 border border-gray-300 rounded"> */}
+            <div id="pickup-autocomplete" className="w-full">
+              {/* <input
               id="pickup"
+              ref={pickupRef}
               placeholder="Enter pickup location (e.g., 500 El Camino Real, Santa Clara)"
               value={pickup}
               onChange={(e) => setPickup(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded"
               required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center">
-              <Navigation2 className="h-5 w-5 text-gray-500 mr-2" />
-              <label htmlFor="destination" className="font-medium">
-                Destination
-              </label>
+            /> */}
             </div>
-            <input
+
+            <div className="space-y-2">
+              <div className="flex items-center">
+                <Navigation2 className="h-5 w-5 text-gray-500 mr-2" />
+                <label htmlFor="destination-autocomplete" className="font-medium">
+                  Destination
+                </label>
+              </div>
+              <div id="destination-autocomplete" className="w-full">
+                {/* <div id="destination-autocomplete" className="w-full p-2 border border-gray-300 rounded"> */}
+                {/* <input
               id="destination"
+              ref={destinationRef}
               placeholder="Enter destination (e.g., San Francisco Airport)"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded"
               required
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <div className="flex items-center justify-center">
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Finding rides...
+            /> */}
               </div>
-            ) : (
-              "Compare Rides"
-            )}
-          </button>
+
+              <button
+                type="submit"
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Finding rides...
+                  </div>
+                ) : (
+                  "Compare Rides"
+                )}
+              </button>
+            </div>
+          </div>
         </form>
+        {error && <div className="mt-4 p-4 bg-red-50 text-red-800 rounded-md border border-red-200">{error}</div>}
+        {results && <RideComparisonResults results={results} insights={insights} />}
       </div>
-
-      {error && <div className="mt-4 p-4 bg-red-50 text-red-800 rounded-md border border-red-200">{error}</div>}
-
-      {results && <RideComparisonResults results={results} insights={insights} />}
     </div>
   )
 }
