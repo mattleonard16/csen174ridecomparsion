@@ -1,18 +1,83 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { MapPin, Navigation2, Loader2 } from "lucide-react"
 import RideComparisonResults from "./ride-comparison-results"
+import RouteMap from './RouteMap'
 
 export default function RideComparisonForm() {
   const [pickup, setPickup] = useState("")
   const [destination, setDestination] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [results, setResults] = useState(null)
+  const [results, setResults] = useState<{
+    uber: { price: string; waitTime: string; driversNearby: number; service: string };
+    lyft: { price: string; waitTime: string; driversNearby: number; service: string };
+    taxi: { price: string; waitTime: string; driversNearby: number; service: string };
+  } | null>(null)
   const [insights, setInsights] = useState("")
   const [error, setError] = useState("")
+  const [suggestions, setSuggestions] = useState<any[]>([])
+  const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([])
+  const [pickupCoords, setPickupCoords] = useState<[number, number] | null>(null)
+  const [destinationCoords, setDestinationCoords] = useState<[number, number] | null>(null)
 
-  const handleSubmit = async (e) => {
+  const fetchSuggestions = async (query: string) => {
+    if (!query) {
+      setSuggestions([])
+      return
+    }
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`
+      )
+      const data = await response.json()
+      setSuggestions(data)
+    } catch (error) {
+      console.error("Error fetching suggestions:", error)
+    }
+  }
+
+  const handlePickupChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setPickup(value)
+    fetchSuggestions(value)
+  }
+
+  const handleSuggestionClick = (suggestion: any) => {
+    setPickup(suggestion.display_name)
+    setSuggestions([])
+  }
+
+  const fetchDestinationSuggestions = async (query: string) => {
+    if (!query) {
+      setDestinationSuggestions([])
+      return
+    }
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`
+      )
+      const data = await response.json()
+      setDestinationSuggestions(data)
+    } catch (error) {
+      console.error("Error fetching destination suggestions:", error)
+    }
+  }
+
+  const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setDestination(value)
+    fetchDestinationSuggestions(value)
+  }
+
+  const handleDestinationSuggestionClick = (suggestion: any) => {
+    setDestination(suggestion.display_name)
+    setDestinationSuggestions([])
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setResults(null)
@@ -20,7 +85,6 @@ export default function RideComparisonForm() {
     setError("")
 
     try {
-      // Call the API route
       const response = await fetch("/api/compare-rides", {
         method: "POST",
         headers: {
@@ -35,7 +99,6 @@ export default function RideComparisonForm() {
       const data = await response.json()
 
       if (!response.ok) {
-        // Check for geocoding error
         if (data.error && data.error.includes("geocode")) {
           setError("Please enter a more specific or valid address for both pickup and destination.")
         } else if (data.error && data.error.includes("required")) {
@@ -48,6 +111,8 @@ export default function RideComparisonForm() {
 
       setResults(data.comparisons)
       setInsights(data.insights)
+      setPickupCoords(data.pickupCoords)
+      setDestinationCoords(data.destinationCoords)
     } catch (error) {
       console.error("Error:", error)
       // Fallback to simulated data for demo purposes
@@ -139,6 +204,10 @@ export default function RideComparisonForm() {
       </div>
 
       {error && <div className="mt-4 p-4 bg-red-50 text-red-800 rounded-md border border-red-200">{error}</div>}
+
+      {pickupCoords && destinationCoords && (
+        <RouteMap pickup={pickupCoords} destination={destinationCoords} />
+      )}
 
       {results && <RideComparisonResults results={results} insights={insights} />}
     </div>
