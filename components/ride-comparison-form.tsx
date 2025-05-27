@@ -44,38 +44,6 @@ export default function RideComparisonForm() {
       document.body.appendChild(script);
     };
 
-    const attachAutocomplete = async () => {
-      await customElements.whenDefined("gmp-place-autocomplete");
-      //const pickupDiv = document.getElementById("pickup-autocomplete");
-      //const destinationDiv = document.getElementById("destination-autocomplete");
-
-      if (pickupDiv && !pickupDiv.hasChildNodes()) {
-        const pickupEl = document.createElement("gmp-place-autocomplete");
-        pickupEl.setAttribute("placeholder", "Enter pickup location");
-        pickupEl.addEventListener("gmp-select", (event: any) => {
-          const place = event?.detail?.place;
-          const address = place?.formatted_address || place?.name || place?.displayName || "";
-          latestPickup.current = address
-          // console.log("Pickup event.detail:", event.detail);          
-          console.log("Pickup selected:", address);
-        });
-        //pickupDiv.appendChild(pickupEl);
-      }
-
-      if (destinationDiv && !destinationDiv.hasChildNodes()) {
-        const destinationEl = document.createElement("gmp-place-autocomplete");
-        destinationEl.setAttribute("placeholder", "Enter destination");
-        destinationEl.addEventListener("gmp-select", (event: any) => {
-          console.log("Destination event.detail:", event.detail);
-          const place = event?.detail?.place;
-          const address = place?.formatted_address || place?.name || place?.displayName || "";
-          latestDestination.current = address
-          setDestination(address);
-        });
-        //destinationDiv.appendChild(destinationEl);
-      }
-    };
-
     if (typeof window !== "undefined") {
       loadScript();
     }
@@ -123,68 +91,6 @@ export default function RideComparisonForm() {
     } finally {
       setIsLoading(false);
     }
-    // e.preventDefault();
-    // setIsLoading(true);
-    // setResults(null);
-    // setInsights("");
-    // setError("");
-
-    // const pickupValue = latestPickup.trim()
-    // const destinationValue = latestDestination.trim()
-
-    // //Access the <input> inside <gmp-place-autocomplete>'s shadow DOM
-    // const pickupInput = document
-    //   .querySelector("#pickup-autocomplete gmp-place-autocomplete")
-    //   ?.shadowRoot?.querySelector("input") as HTMLInputElement | null;
-
-    // const destinationInput = document
-    //   .querySelector("#destination-autocomplete gmp-place-autocomplete")
-    //   ?.shadowRoot?.querySelector("input") as HTMLInputElement | null;
-
-    // console.log("State pickup:", pickupValue);
-    // console.log("State destination:", destinationValue);
-
-    // if (!pickupValue || !destinationValue) {
-    //   console.error("Missing one or both addresses");
-    //   setError("Both pickup and destination addresses are required.");
-    //   setIsLoading(false);
-    //   return;
-    // }
-
-
-    // console.log("pickup:", pickupValue);
-    // console.log("destination:", destinationValue);
-
-    // if (!pickupValue || !destinationValue) {
-    //   setError("Both pickup and destination addresses are required.");
-    //   setIsLoading(false);
-    //   return;
-    // }
-
-    // try {
-    //   const response = await fetch("/api/compare-rides", {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify({ pickup: pickupValue, destination: destinationValue }),
-    //   });
-
-    //   const data = await response.json();
-
-    //   if (!response.ok) {
-    //     setError(data.error || "Failed to fetch ride comparisons.");
-    //     return;
-    //   }
-
-    //   setResults(data.comparisons);
-    //   setInsights(data.insights);
-    // } catch (err) {
-    //   console.error("Fetch error:", err);
-    //   setError("Unexpected error. Showing fallback data.");
-    // } finally {
-    //   setIsLoading(false);
-    // }
   };
 
   return (
@@ -196,7 +102,6 @@ export default function RideComparisonForm() {
               <MapPin className="h-5 w-5 text-gray-500 mr-2" />
               <label htmlFor="pickup" className="font-medium">Pickup Location</label>
             </div>
-            {/* <div id="pickup-autocomplete" className="w-full" /> */}
             <input
               ref={pickupRef}
               id="pickup"
@@ -210,7 +115,6 @@ export default function RideComparisonForm() {
               <Navigation2 className="h-5 w-5 text-gray-500 mr-2" />
               <label htmlFor="destination-autocomplete" className="font-medium">Destination</label>
             </div>
-            {/* <div id="destination-autocomplete" className="w-full" /> */}
             <input
               ref={destinationRef}
               id="destination"
