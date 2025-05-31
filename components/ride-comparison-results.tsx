@@ -1,6 +1,43 @@
 import { Clock, DollarSign, Users, AlertCircle } from "lucide-react"
 
-export default function RideComparisonResults({ results, insights }) {
+type RideData = {
+  price: string;
+  waitTime: string;
+  driversNearby: number;
+  service: string;
+}
+
+type Results = {
+  uber: RideData;
+  lyft: RideData;
+  taxi: RideData;
+}
+
+type RideComparisonResultsProps = {
+  results: Results;
+  insights: string;
+}
+
+export default function RideComparisonResults({ results, insights }: RideComparisonResultsProps) {
+  // Function to generate booking URLs
+  const getBookingUrl = (serviceName: string) => {
+    switch (serviceName.toLowerCase()) {
+      case 'uber':
+        return 'https://m.uber.com/looking'
+      case 'lyft':
+        return 'https://www.lyft.com/'
+      default:
+        return '#'
+    }
+  }
+
+  const handleBooking = (serviceName: string) => {
+    const url = getBookingUrl(serviceName)
+    if (url !== '#') {
+      window.open(url, '_blank', 'noopener,noreferrer')
+    }
+  }
+
   const services = [
     {
       name: "Uber",
@@ -104,9 +141,11 @@ export default function RideComparisonResults({ results, insights }) {
 
                 <div className="pt-2">
                   <button
-                    className={`w-full py-2 px-4 border-2 rounded ${service.borderColor} ${service.textColor} ${service.hoverBg} ${service.hoverText} transition-colors`}
+                    onClick={() => handleBooking(service.name)}
+                    className={`w-full py-2 px-4 border-2 rounded ${service.borderColor} ${service.textColor} ${service.hoverBg} ${service.hoverText} transition-colors ${service.name === 'Taxi' ? 'cursor-default' : 'cursor-pointer'}`}
+                    disabled={service.name === 'Taxi'}
                   >
-                    Book with {service.name}
+                    {service.name === 'Taxi' ? `Call ${service.name}` : `Book with ${service.name}`}
                   </button>
                 </div>
               </div>

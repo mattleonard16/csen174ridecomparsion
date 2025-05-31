@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { MapPin, Navigation2, Loader2 } from "lucide-react"
 import RideComparisonResults from "./ride-comparison-results"
 import RouteMap from './RouteMap'
@@ -20,21 +20,52 @@ export default function RideComparisonForm() {
   const [destinationSuggestions, setDestinationSuggestions] = useState<any[]>([])
   const [pickupCoords, setPickupCoords] = useState<[number, number] | null>(null)
   const [destinationCoords, setDestinationCoords] = useState<[number, number] | null>(null)
+  const [showPickupSuggestions, setShowPickupSuggestions] = useState(false)
+  const [showDestinationSuggestions, setShowDestinationSuggestions] = useState(false)
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
+  const [isLoadingDestSuggestions, setIsLoadingDestSuggestions] = useState(false)
+  
+  const pickupRef = useRef<HTMLDivElement>(null)
+  const destinationRef = useRef<HTMLDivElement>(null)
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (pickupRef.current && !pickupRef.current.contains(event.target as Node)) {
+        setShowPickupSuggestions(false)
+      }
+      if (destinationRef.current && !destinationRef.current.contains(event.target as Node)) {
+        setShowDestinationSuggestions(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   const fetchSuggestions = async (query: string) => {
-    if (!query) {
+    if (!query || query.length < 3) {
       setSuggestions([])
+      setShowPickupSuggestions(false)
       return
     }
 
+    setIsLoadingSuggestions(true)
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=us`
       )
       const data = await response.json()
       setSuggestions(data)
+      setShowPickupSuggestions(data.length > 0)
     } catch (error) {
       console.error("Error fetching suggestions:", error)
+      setSuggestions([])
+      setShowPickupSuggestions(false)
+    } finally {
+      setIsLoadingSuggestions(false)
     }
   }
 
@@ -47,22 +78,30 @@ export default function RideComparisonForm() {
   const handleSuggestionClick = (suggestion: any) => {
     setPickup(suggestion.display_name)
     setSuggestions([])
+    setShowPickupSuggestions(false)
   }
 
   const fetchDestinationSuggestions = async (query: string) => {
-    if (!query) {
+    if (!query || query.length < 3) {
       setDestinationSuggestions([])
+      setShowDestinationSuggestions(false)
       return
     }
 
+    setIsLoadingDestSuggestions(true)
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=us`
       )
       const data = await response.json()
       setDestinationSuggestions(data)
+      setShowDestinationSuggestions(data.length > 0)
     } catch (error) {
       console.error("Error fetching destination suggestions:", error)
+      setDestinationSuggestions([])
+      setShowDestinationSuggestions(false)
+    } finally {
+      setIsLoadingDestSuggestions(false)
     }
   }
 
@@ -75,6 +114,7 @@ export default function RideComparisonForm() {
   const handleDestinationSuggestionClick = (suggestion: any) => {
     setDestination(suggestion.display_name)
     setDestinationSuggestions([])
+    setShowDestinationSuggestions(false)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,6 +123,9 @@ export default function RideComparisonForm() {
     setResults(null)
     setInsights("")
     setError("")
+    // Clear coordinates when starting a new search
+    setPickupCoords(null)
+    setDestinationCoords(null)
 
     try {
       const response = await fetch("/api/compare-rides", {
@@ -106,6 +149,7 @@ export default function RideComparisonForm() {
         } else {
           setError("Failed to fetch ride comparisons. Please try again.")
         }
+        // Don't set coordinates on error - they should remain null
         return
       }
 
@@ -143,6 +187,7 @@ export default function RideComparisonForm() {
       setResults(simulatedResults)
       setInsights("Based on price and wait time, Lyft appears to be your best option for this trip.")
       setError("Note: Using simulated data due to API connection issues.")
+      // Don't set coordinates for simulated data
     } finally {
       setIsLoading(false)
     }
@@ -152,7 +197,7 @@ export default function RideComparisonForm() {
     <div className="w-full max-w-3xl mx-auto">
       <div className="bg-white shadow-md rounded-lg p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+          <div className="space-y-2 relative" ref={pickupRef}>
             <div className="flex items-center">
               <MapPin className="h-5 w-5 text-gray-500 mr-2" />
               <label htmlFor="pickup" className="font-medium">
@@ -163,13 +208,37 @@ export default function RideComparisonForm() {
               id="pickup"
               placeholder="Enter pickup location (e.g., 500 El Camino Real, Santa Clara)"
               value={pickup}
-              onChange={(e) => setPickup(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded"
+              onChange={handlePickupChange}
+              onFocus={() => pickup.length >= 3 && suggestions.length > 0 && setShowPickupSuggestions(true)}
+              className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
+            
+            {/* Pickup Suggestions Dropdown */}
+            {showPickupSuggestions && (
+              <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                {isLoadingSuggestions ? (
+                  <div className="p-3 text-center text-gray-500">
+                    <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
+                    Loading suggestions...
+                  </div>
+                ) : (
+                  suggestions.map((suggestion, index) => (
+                    <div
+                      key={suggestion.place_id || index}
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      className="p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                    >
+                      <div className="font-medium text-sm">{suggestion.name || suggestion.display_name.split(',')[0]}</div>
+                      <div className="text-xs text-gray-500 truncate">{suggestion.display_name}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 relative" ref={destinationRef}>
             <div className="flex items-center">
               <Navigation2 className="h-5 w-5 text-gray-500 mr-2" />
               <label htmlFor="destination" className="font-medium">
@@ -180,10 +249,34 @@ export default function RideComparisonForm() {
               id="destination"
               placeholder="Enter destination (e.g., San Francisco Airport)"
               value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded"
+              onChange={handleDestinationChange}
+              onFocus={() => destination.length >= 3 && destinationSuggestions.length > 0 && setShowDestinationSuggestions(true)}
+              className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
+            
+            {/* Destination Suggestions Dropdown */}
+            {showDestinationSuggestions && (
+              <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                {isLoadingDestSuggestions ? (
+                  <div className="p-3 text-center text-gray-500">
+                    <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
+                    Loading suggestions...
+                  </div>
+                ) : (
+                  destinationSuggestions.map((suggestion, index) => (
+                    <div
+                      key={suggestion.place_id || index}
+                      onClick={() => handleDestinationSuggestionClick(suggestion)}
+                      className="p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                    >
+                      <div className="font-medium text-sm">{suggestion.name || suggestion.display_name.split(',')[0]}</div>
+                      <div className="text-xs text-gray-500 truncate">{suggestion.display_name}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
 
           <button
@@ -206,7 +299,11 @@ export default function RideComparisonForm() {
       {error && <div className="mt-4 p-4 bg-red-50 text-red-800 rounded-md border border-red-200">{error}</div>}
 
       {pickupCoords && destinationCoords && (
-        <RouteMap pickup={pickupCoords} destination={destinationCoords} />
+        <RouteMap 
+          key={`${pickupCoords[0]}-${pickupCoords[1]}-${destinationCoords[0]}-${destinationCoords[1]}`}
+          pickup={pickupCoords} 
+          destination={destinationCoords} 
+        />
       )}
 
       {results && <RideComparisonResults results={results} insights={insights} />}
