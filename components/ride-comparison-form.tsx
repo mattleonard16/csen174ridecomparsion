@@ -1,9 +1,130 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { MapPin, Navigation2, Loader2 } from "lucide-react"
 import RideComparisonResults from "./ride-comparison-results"
 import RouteMap from './RouteMap'
+
+// Common places cache for faster autocomplete
+const COMMON_PLACES = {
+  'santa clara university': {
+    display_name: 'Santa Clara University, Santa Clara, CA, USA',
+    name: 'Santa Clara University',
+    lat: '37.3496',
+    lon: '-121.9390'
+  },
+  'san jose airport': {
+    display_name: 'San Jose International Airport (SJC), San Jose, CA, USA',
+    name: 'San Jose Airport (SJC)',
+    lat: '37.3639',
+    lon: '-121.9289'
+  },
+  'sjc': {
+    display_name: 'San Jose International Airport (SJC), San Jose, CA, USA',
+    name: 'San Jose Airport (SJC)',
+    lat: '37.3639',
+    lon: '-121.9289'
+  },
+  'sfo': {
+    display_name: 'San Francisco International Airport (SFO), San Francisco, CA, USA',
+    name: 'San Francisco Airport (SFO)',
+    lat: '37.6213',
+    lon: '-122.3790'
+  },
+  'san francisco airport': {
+    display_name: 'San Francisco International Airport (SFO), San Francisco, CA, USA',
+    name: 'San Francisco Airport (SFO)',
+    lat: '37.6213',
+    lon: '-122.3790'
+  },
+  'oakland airport': {
+    display_name: 'Oakland International Airport (OAK), Oakland, CA, USA',
+    name: 'Oakland Airport (OAK)',
+    lat: '37.7126',
+    lon: '-122.2197'
+  },
+  'oak': {
+    display_name: 'Oakland International Airport (OAK), Oakland, CA, USA',
+    name: 'Oakland Airport (OAK)',
+    lat: '37.7126',
+    lon: '-122.2197'
+  },
+  'stanford university': {
+    display_name: 'Stanford University, Stanford, CA, USA',
+    name: 'Stanford University',
+    lat: '37.4275',
+    lon: '-122.1697'
+  },
+  'cupertino': {
+    display_name: 'Cupertino, CA, USA',
+    name: 'Cupertino',
+    lat: '37.3230',
+    lon: '-122.0322'
+  },
+  'apple park': {
+    display_name: 'Apple Park, Cupertino, CA, USA',
+    name: 'Apple Park',
+    lat: '37.3349',
+    lon: '-122.0090'
+  },
+  'google': {
+    display_name: 'Googleplex, Mountain View, CA, USA',
+    name: 'Google Headquarters',
+    lat: '37.4220',
+    lon: '-122.0841'
+  },
+  'mountain view': {
+    display_name: 'Mountain View, CA, USA',
+    name: 'Mountain View',
+    lat: '37.3861',
+    lon: '-122.0839'
+  },
+  'palo alto': {
+    display_name: 'Palo Alto, CA, USA',
+    name: 'Palo Alto',
+    lat: '37.4419',
+    lon: '-122.1430'
+  },
+  'san jose': {
+    display_name: 'San Jose, CA, USA',
+    name: 'San Jose',
+    lat: '37.3382',
+    lon: '-121.8863'
+  },
+  'santa clara': {
+    display_name: 'Santa Clara, CA, USA',
+    name: 'Santa Clara',
+    lat: '37.3541',
+    lon: '-121.9552'
+  },
+  'sunnyvale': {
+    display_name: 'Sunnyvale, CA, USA',
+    name: 'Sunnyvale',
+    lat: '37.3688',
+    lon: '-122.0363'
+  },
+  'fremont': {
+    display_name: 'Fremont, CA, USA',
+    name: 'Fremont',
+    lat: '37.5485',
+    lon: '-121.9886'
+  },
+  'san francisco': {
+    display_name: 'San Francisco, CA, USA',
+    name: 'San Francisco',
+    lat: '37.7749',
+    lon: '-122.4194'
+  },
+  'downtown san jose': {
+    display_name: 'Downtown San Jose, San Jose, CA, USA',
+    name: 'Downtown San Jose',
+    lat: '37.3382',
+    lon: '-121.8863'
+  }
+}
+
+// Cache for API results
+const searchCache = new Map()
 
 export default function RideComparisonForm() {
   const [pickup, setPickup] = useState("")
@@ -27,6 +148,8 @@ export default function RideComparisonForm() {
   
   const pickupRef = useRef<HTMLDivElement>(null)
   const destinationRef = useRef<HTMLDivElement>(null)
+  const debounceTimeoutRef = useRef<NodeJS.Timeout>()
+  const destDebounceTimeoutRef = useRef<NodeJS.Timeout>()
 
   // Close suggestions when clicking outside
   useEffect(() => {
@@ -45,8 +168,86 @@ export default function RideComparisonForm() {
     }
   }, [])
 
-  const fetchSuggestions = async (query: string) => {
-    if (!query || query.length < 3) {
+  // Enhanced search function that checks common places first
+  const searchPlaces = async (query: string): Promise<any[]> => {
+    const normalizedQuery = query.toLowerCase().trim()
+    
+    // Check cache first
+    if (searchCache.has(normalizedQuery)) {
+      return searchCache.get(normalizedQuery)
+    }
+    
+    // Check common places first
+    const commonMatches = Object.entries(COMMON_PLACES)
+      .filter(([key, place]) => 
+        key.includes(normalizedQuery) || 
+        place.name.toLowerCase().includes(normalizedQuery) ||
+        place.display_name.toLowerCase().includes(normalizedQuery)
+      )
+      .map(([key, place]) => ({
+        place_id: key,
+        display_name: place.display_name,
+        name: place.name,
+        lat: place.lat,
+        lon: place.lon
+      }))
+
+    // If we have good common matches, return them first
+    if (commonMatches.length > 0 && normalizedQuery.length >= 3) {
+      try {
+        // Still fetch from API but combine results
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ' California')}&format=json&limit=3&countrycodes=us&addressdetails=1&extratags=1`,
+          {
+            headers: {
+              'User-Agent': 'RideCompareApp/1.0'
+            }
+          }
+        )
+        const apiData = await response.json()
+        
+        // Combine common places with API results, prioritizing common places
+        const combinedResults = [...commonMatches, ...apiData.slice(0, 3)]
+        const uniqueResults = combinedResults.filter((item, index, self) => 
+          index === self.findIndex(t => 
+            t.display_name === item.display_name || 
+            (t.name && item.name && t.name === item.name) ||
+            (t.lat && item.lat && Math.abs(parseFloat(t.lat) - parseFloat(item.lat)) < 0.001 &&
+             t.lon && item.lon && Math.abs(parseFloat(t.lon) - parseFloat(item.lon)) < 0.001)
+          )
+        ).slice(0, 5)
+        
+        searchCache.set(normalizedQuery, uniqueResults)
+        return uniqueResults
+      } catch (error) {
+        console.error("API error, using common places:", error)
+        searchCache.set(normalizedQuery, commonMatches)
+        return commonMatches
+      }
+    }
+
+    // Fallback to API only
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ' California')}&format=json&limit=5&countrycodes=us&addressdetails=1&extratags=1`,
+        {
+          headers: {
+            'User-Agent': 'RideCompareApp/1.0'
+          }
+        }
+      )
+      const data = await response.json()
+      searchCache.set(normalizedQuery, data)
+      return data
+    } catch (error) {
+      console.error("Error fetching suggestions:", error)
+      return []
+    }
+  }
+
+  // fetch function for pickup
+  const debouncedFetchSuggestions = useCallback(async (query: string) => {
+    if (!query || query.length < 2) {
       setSuggestions([])
       setShowPickupSuggestions(false)
       return
@@ -54,10 +255,7 @@ export default function RideComparisonForm() {
 
     setIsLoadingSuggestions(true)
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=us`
-      )
-      const data = await response.json()
+      const data = await searchPlaces(query)
       setSuggestions(data)
       setShowPickupSuggestions(data.length > 0)
     } catch (error) {
@@ -67,22 +265,11 @@ export default function RideComparisonForm() {
     } finally {
       setIsLoadingSuggestions(false)
     }
-  }
+  }, [])
 
-  const handlePickupChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setPickup(value)
-    fetchSuggestions(value)
-  }
-
-  const handleSuggestionClick = (suggestion: any) => {
-    setPickup(suggestion.display_name)
-    setSuggestions([])
-    setShowPickupSuggestions(false)
-  }
-
-  const fetchDestinationSuggestions = async (query: string) => {
-    if (!query || query.length < 3) {
+  // fetch function for destination
+  const debouncedFetchDestinationSuggestions = useCallback(async (query: string) => {
+    if (!query || query.length < 2) {
       setDestinationSuggestions([])
       setShowDestinationSuggestions(false)
       return
@@ -90,10 +277,7 @@ export default function RideComparisonForm() {
 
     setIsLoadingDestSuggestions(true)
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=us`
-      )
-      const data = await response.json()
+      const data = await searchPlaces(query)
       setDestinationSuggestions(data)
       setShowDestinationSuggestions(data.length > 0)
     } catch (error) {
@@ -103,12 +287,42 @@ export default function RideComparisonForm() {
     } finally {
       setIsLoadingDestSuggestions(false)
     }
+  }, [])
+
+  const handlePickupChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setPickup(value)
+    
+    // Clear existing timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current)
+    }
+    
+    // Set new timeout for debounced search
+    debounceTimeoutRef.current = setTimeout(() => {
+      debouncedFetchSuggestions(value)
+    }, 300) // 300ms delay
+  }
+
+  const handleSuggestionClick = (suggestion: any) => {
+    setPickup(suggestion.display_name)
+    setSuggestions([])
+    setShowPickupSuggestions(false)
   }
 
   const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setDestination(value)
-    fetchDestinationSuggestions(value)
+    
+    // Clear existing timeout
+    if (destDebounceTimeoutRef.current) {
+      clearTimeout(destDebounceTimeoutRef.current)
+    }
+    
+    // Set new timeout for  search
+    destDebounceTimeoutRef.current = setTimeout(() => {
+      debouncedFetchDestinationSuggestions(value)
+    }, 300) // 300ms delay
   }
 
   const handleDestinationSuggestionClick = (suggestion: any) => {
@@ -116,6 +330,18 @@ export default function RideComparisonForm() {
     setDestinationSuggestions([])
     setShowDestinationSuggestions(false)
   }
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current)
+      }
+      if (destDebounceTimeoutRef.current) {
+        clearTimeout(destDebounceTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -159,7 +385,7 @@ export default function RideComparisonForm() {
       setDestinationCoords(data.destinationCoords)
     } catch (error) {
       console.error("Error:", error)
-      // Fallback to simulated data for demo purposes
+      // to simulated data for demo purposes
       const basePrice = 15 + Math.random() * 10
       const baseWaitTime = 2 + Math.floor(Math.random() * 5)
 
@@ -206,10 +432,19 @@ export default function RideComparisonForm() {
             </div>
             <input
               id="pickup"
-              placeholder="Enter pickup location (e.g., 500 El Camino Real, Santa Clara)"
+              placeholder="Enter pickup location (e.g., Santa Clara University, Cupertino)"
               value={pickup}
               onChange={handlePickupChange}
-              onFocus={() => pickup.length >= 3 && suggestions.length > 0 && setShowPickupSuggestions(true)}
+              onFocus={() => {
+                if (pickup.length >= 2) {
+                  if (suggestions.length > 0) {
+                    setShowPickupSuggestions(true)
+                  } else {
+                    // Trigger search immediately on focus if there's content
+                    debouncedFetchSuggestions(pickup)
+                  }
+                }
+              }}
               className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
@@ -247,10 +482,19 @@ export default function RideComparisonForm() {
             </div>
             <input
               id="destination"
-              placeholder="Enter destination (e.g., San Francisco Airport)"
+              placeholder="Enter destination (e.g., San Jose Airport, SFO)"
               value={destination}
               onChange={handleDestinationChange}
-              onFocus={() => destination.length >= 3 && destinationSuggestions.length > 0 && setShowDestinationSuggestions(true)}
+              onFocus={() => {
+                if (destination.length >= 2) {
+                  if (destinationSuggestions.length > 0) {
+                    setShowDestinationSuggestions(true)
+                  } else {
+                    // Trigger search immediately on focus if there's content
+                    debouncedFetchDestinationSuggestions(destination)
+                  }
+                }
+              }}
               className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
