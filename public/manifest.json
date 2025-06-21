@@ -1,0 +1,14 @@
+{
+  "name": "Comparative Rideshares",
+  "short_name": "RideCompare",
+  "description": "Compare Uber, Lyft, and Taxi prices & wait times",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#1e40ff",
+  "background_color": "#ffffff",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any maskable" }
+  ]
+} 

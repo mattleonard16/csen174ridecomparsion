@@ -7,7 +7,7 @@ import { Slider } from "./ui/slider"
 import { Switch } from "./ui/switch"
 import { Label } from "./ui/label"
 
-export default function AdvancedSearchForm({ onSubmit }) {
+export default function AdvancedSearchForm() {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
   const [priceImportance, setPriceImportance] = useState(5)
   const [timeImportance, setTimeImportance] = useState(5)
@@ -111,7 +111,7 @@ export default function AdvancedSearchForm({ onSubmit }) {
             {isGenerating ? "Generating..." : "Generate Preferences Summary"}
           </Button>
 
-          {preferences && <div className="bg-gray-100 p-3 rounded-md italic text-gray-700">"{preferences}"</div>}
+          {preferences && <div className="bg-gray-100 p-3 rounded-md italic text-gray-700">&quot;{preferences}&quot;</div>}
         </Card>
       )}
     </div>

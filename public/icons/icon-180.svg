@@ -1,0 +1,9 @@
+<svg width="180" height="180" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+  <rect width="180" height="180" fill="#1e40ff" rx="22"/>
+  <g fill="white">
+    <path d="M48 120c-8.8 0-16 7.2-16 16s7.2 16 16 16 16-7.2 16-16-7.2-16-16-16zm96 0c-8.8 0-16 7.2-16 16s7.2 16 16 16 16-7.2 16-16-7.2-16-16-16z"/>
+    <path d="M156 88H36c-4.4 0-8 3.6-8 8v32c0 4.4 3.6 8 8 8h8c0-13.3 10.7-24 24-24s24 10.7 24 24h32c0-13.3 10.7-24 24-24s24 10.7 24 24h8c4.4 0 8-3.6 8-8V96c0-4.4-3.6-8-8-8z"/>
+    <path d="M44 80h104l-8-16H52l-8 16z"/>
+    <text x="96" y="60" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="white">RC</text>
+  </g>
+</svg> 
