@@ -34,12 +34,12 @@ Compare prices and wait times across Uber, Lyft, and Taxi services in the Bay Ar
    ```
 
 ## Features
-- 🕐 **Real-time surge pricing** with smart time-based multipliers
-- 💡 **Best time recommendations** for optimal pricing
-- 📱 **ETA sharing** to notify family/friends
-- 🔔 **Price alerts** for fare drop notifications
-- 🗺️ **Interactive route mapping** with OpenStreetMap
-- 📊 **Comprehensive comparison** across Uber, Lyft & Taxi
+- **Real-time surge pricing** with smart time-based multipliers
+- **Best time recommendations** for optimal pricing
+- **ETA sharing** to notify family/friends
+- **Price alerts** for fare drop notifications
+- **Interactive route mapping** with OpenStreetMap
+- **Comprehensive comparison** across Uber, Lyft & Taxi
 
 ## Usage
 1. Enter pickup location (e.g., "Santa Clara University")

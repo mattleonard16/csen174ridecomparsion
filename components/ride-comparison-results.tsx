@@ -228,7 +228,7 @@ export default function RideComparisonResults({
         {timeRecommendations.length > 0 && (
           <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-md">
             <div className="text-green-800">
-              <strong>💡 Best Time Tips:</strong>
+                             <strong>Best Time Tips:</strong>
               <ul className="mt-2 space-y-1">
                 {timeRecommendations.map((tip, index) => (
                   <li key={index} className="text-sm">{tip}</li>

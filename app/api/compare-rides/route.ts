@@ -141,28 +141,28 @@ function getBestTimeRecommendations(): string[] {
   // Show only 2 most relevant tips based on current time
   if (hour >= 14 && hour <= 16) {
     return [
-      "✨ Great timing! You're booking during off-peak hours with 10% discount",
-      "💰 Best prices are typically 2-4 PM (avoid rush hours for savings)"
+      "Great timing! You're booking during off-peak hours with 10% discount",
+      "Best prices are typically 2-4 PM (avoid rush hours for savings)"
     ]
   } else if (hour >= 7 && hour <= 9) {
     return [
-      "⚠️ Rush hour pricing in effect. Expect 10-20% increase over standard rates",
-      "💰 Best prices: 2-4 PM (10% discount during off-peak)"
+      "Rush hour pricing in effect. Expect 10-20% increase over standard rates",
+      "Best prices: 2-4 PM (10% discount during off-peak)"
     ]
   } else if (hour >= 17 && hour <= 19) {
     return [
-      "⚠️ Evening rush pricing. Consider waiting until after 8 PM for better rates",
-      "💰 Best prices: 2-4 PM (10% discount during off-peak)"
+      "Evening rush pricing. Consider waiting until after 8 PM for better rates",
+      "Best prices: 2-4 PM (10% discount during off-peak)"
     ]
   } else if (hour >= 20 || hour <= 5) {
     return [
-      "🌙 Late night premium in effect (15% increase for night service)",
-      "💰 Best prices: 2-4 PM (avoid peak hours for savings)"
+      "Late night premium in effect (15% increase for night service)",
+      "Best prices: 2-4 PM (avoid peak hours for savings)"
     ]
   } else {
     return [
-      "💰 Best prices: 2-4 PM (10% discount during off-peak)",
-      "⏰ Avoid rush hours: 7-9 AM and 5-7 PM (up to 20% increase)"
+      "Best prices: 2-4 PM (10% discount during off-peak)",
+      "Avoid rush hours: 7-9 AM and 5-7 PM (up to 20% increase)"
     ]
   }
 }

@@ -623,7 +623,7 @@ export default function RideComparisonForm() {
                 title="Swap pickup and destination"
                 disabled={!pickup || !destination}
               >
-                <span className="text-lg">↕️</span>
+                <span className="text-lg">↕</span>
                 <span className="hidden sm:inline ml-1">Swap</span>
               </button>
             </div>
