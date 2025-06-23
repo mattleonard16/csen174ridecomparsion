@@ -224,20 +224,6 @@ export default function RideComparisonResults({
           </div>
         )}
 
-        {/* Time Recommendations */}
-        {timeRecommendations.length > 0 && (
-          <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-md">
-            <div className="text-green-800">
-                             <strong>Best Time Tips:</strong>
-              <ul className="mt-2 space-y-1">
-                {timeRecommendations.map((tip, index) => (
-                  <li key={index} className="text-sm">{tip}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        )}
-
         {insights && (
           <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md">
             <div className="flex">
@@ -321,6 +307,20 @@ export default function RideComparisonResults({
             </div>
           ))}
         </div>
+
+        {/* Time Recommendations */}
+        {timeRecommendations.length > 0 && (
+          <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-md">
+            <div className="text-green-800">
+              <strong>Best Time Tips:</strong>
+              <ul className="mt-2 space-y-1">
+                {timeRecommendations.map((tip, index) => (
+                  <li key={index} className="text-sm">{tip}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Price Alert Modal */}

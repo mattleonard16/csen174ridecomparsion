@@ -167,11 +167,11 @@ function getBestTimeRecommendations(): string[] {
   }
 }
 
-// Realistic Bay Area rideshare rates (updated to match actual pricing)
+// Realistic Bay Area rideshare rates (calibrated to match actual pricing)
 const UBER = {
   base: 1.49,           // Uber base fare SF Bay Area
-  perMile: 1.15,        // Per mile rate
-  perMin: 0.21,         // Per minute rate  
+  perMile: 1.65,        // Per mile rate (updated to match real pricing)
+  perMin: 0.35,         // Per minute rate (updated to match real pricing)
   booking: 0.55,        // Booking fee
   airportSurcharge: 2.75,  // SFO airport fee
   minFare: 7.25,        // Minimum fare
@@ -192,8 +192,8 @@ async function getRideComparisons(pickupCoords: [number, number], destCoords: [n
   // Realistic competitive rates
   const LYFT = { 
     base: 1.00,           // Lyft typically lower base
-    perMile: 1.08,        // Slightly lower per mile
-    perMin: 0.19,         // Lower per minute
+    perMile: 1.58,        // Slightly lower per mile 
+    perMin: 0.33,         // Lower per minute 
     booking: 0.50,        // Lower booking fee
     airportSurcharge: 2.75,  // Same airport fee
     minFare: 7.00,
