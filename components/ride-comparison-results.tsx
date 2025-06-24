@@ -1,6 +1,6 @@
 import { Clock, DollarSign, Users, AlertCircle, Share2, Bell } from "lucide-react"
 // import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useState } from "react"
+import { useState, memo } from "react"
 import PriceAlert from "./price-alert"
 
 type RideData = {
@@ -30,7 +30,7 @@ type RideComparisonResultsProps = {
   destination?: string;
 }
 
-export default function RideComparisonResults({ 
+export default memo(function RideComparisonResults({ 
   results, 
   insights, 
   surgeInfo, 
@@ -328,4 +328,4 @@ export default function RideComparisonResults({
       )}
     </div>
   )
-}
+})
