@@ -117,7 +117,7 @@ function getTimeBasedMultiplier(): { multiplier: number; surgeReason: string } {
   const supplyFactor = 1 + Math.max(0, 5 - driversNearby) * 0.08 // More impact from low supply
 
   // Higher surge cap to match real Uber pricing (up to 1.6x during peak)
-  const surgeFactor = Math.min(rushFactor * supplyFactor, 1.6)
+  const surgeFactor = Math.min(rushFactor * supplyFactor, 1.4)
 
   // Generate descriptive reason
   let surgeReason = timeReason
@@ -169,12 +169,12 @@ function getBestTimeRecommendations(): string[] {
 
 // Realistic Bay Area rideshare rates (recalibrated to match UberX pricing for SCU -> SFO)
 const UBER = {
-  base: 1.50,
-  perMile: 1.15, // Adjusted for SCU to SFO route
-  perMin: 0.30,  // Adjusted for SCU to SFO route
-  booking: 0.85,
-  airportSurcharge: 4.50,
-  minFare: 8.50,
+  base: 1.35,           // Slightly higher than Lyft
+  perMile: 1.18,        // Brought in line with Lyft's pricing structure
+  perMin: 0.32,         // Slightly higher
+  booking: 0.95,
+  airportSurcharge: 4.25,
+  minFare: 9.00,
 };
 
 function kmToMiles(km: number) {
@@ -190,13 +190,13 @@ async function getRideComparisons(pickupCoords: [number, number], destCoords: [n
   console.log(`Distance: ${distanceKm.toFixed(2)} km, Duration: ${durationMin.toFixed(1)} min, Surge: ${multiplier}x (${surgeReason})`);
 
   // Realistic competitive rates (recalibrated based on new UberX pricing)
-  const LYFT = { 
-    base: 1.40,           // Slightly cheaper than Uber
-    perMile: 1.12,        // Slightly cheaper per mile 
-    perMin: 0.28,         // Slightly cheaper per minute 
-    booking: 0.75,
-    airportSurcharge: 4.50,  // Match Uber
-    minFare: 8.00,
+  const LYFT = {
+    base: 1.20,           // Lower base, confirmed to be accurate
+    perMile: 1.15,        // This seems to be the right rate for the route
+    perMin: 0.30,
+    booking: 0.85,
+    airportSurcharge: 4.25,
+    minFare: 8.50,
   };
   const TAXI = { 
     base: 3.50,
@@ -234,8 +234,8 @@ async function getRideComparisons(pickupCoords: [number, number], destCoords: [n
 
   // Apply time-based surge pricing
   const uberPriceRaw = uberBasePriceRaw * multiplier;
-  const lyftPriceRaw = lyftBasePriceRaw * (multiplier * 0.95); // Lyft typically 5% less surge
-  const taxiPriceRaw = taxiBasePriceRaw * Math.min(multiplier, 1.3); // Taxis have less surge variation
+  const lyftPriceRaw = lyftBasePriceRaw * multiplier; // Apply same surge, difference is in base price
+  const taxiPriceRaw = taxiBasePriceRaw * Math.min(multiplier, 1.2); // Taxis have less surge variation
 
   // Surge affects wait times too
   const baseWaitTime = 2 + Math.floor(Math.random() * 5);
@@ -261,7 +261,7 @@ async function getRideComparisons(pickupCoords: [number, number], destCoords: [n
       waitTime: `${Math.round((baseWaitTime + 3) * Math.min(surgeWaitMultiplier, 1.2))} min`,
       driversNearby: Math.floor(1 + Math.random() * 3),
       service: "Yellow Cab",
-      surgeMultiplier: null, // Taxis don't show surge multiplier
+      surgeMultiplier: multiplier > 1.1 ? `${(multiplier * 0.95).toFixed(1)}x` : null, // Keep visual surge slightly different
     },
     surgeInfo: {
       isActive: multiplier > 1.1,

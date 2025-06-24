@@ -212,18 +212,6 @@ export default function RideComparisonResults({
       <div className="mt-8 space-y-6">
         <h2 className="text-2xl font-bold">Comparison Results</h2>
 
-        {/* Surge Information */}
-        {surgeInfo && surgeInfo.isActive && (
-          <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-md">
-            <div className="flex">
-              <AlertCircle className="h-5 w-5 text-orange-600 mr-2" />
-              <div className="text-orange-800">
-                <strong>Surge Pricing Active:</strong> {surgeInfo.reason} ({surgeInfo.multiplier.toFixed(1)}x multiplier)
-              </div>
-            </div>
-          </div>
-        )}
-
         {insights && (
           <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md">
             <div className="flex">
@@ -319,6 +307,13 @@ export default function RideComparisonResults({
                 ))}
               </ul>
             </div>
+          </div>
+        )}
+
+        {/* Surge note moved below results */}
+        {surgeInfo && surgeInfo.isActive && (
+          <div className="mt-4 text-sm italic text-orange-700">
+            Note: surge pricing is currently active due to {surgeInfo.reason} (approx. {surgeInfo.multiplier.toFixed(1)}× fare increase).
           </div>
         )}
       </div>
