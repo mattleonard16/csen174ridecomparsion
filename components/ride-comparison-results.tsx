@@ -1,5 +1,5 @@
 import { Clock, DollarSign, Users, AlertCircle, Share2, Bell } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useState } from "react"
 import PriceAlert from "./price-alert"
 
@@ -39,7 +39,7 @@ export default function RideComparisonResults({
   destination = "" 
 }: RideComparisonResultsProps) {
   const [showPriceAlert, setShowPriceAlert] = useState(false)
-  const [priceAlerts, setPriceAlerts] = useState<Array<{ threshold: number; timestamp: Date }>>([])
+  // const [priceAlerts] = useState<Array<{ threshold: number; timestamp: Date }>>([])
 
   // Function to generate booking URLs
   const getBookingUrl = (serviceName: string) => {
@@ -132,7 +132,7 @@ export default function RideComparisonResults({
   // Handle price alert setting
   const handleSetPriceAlert = (threshold: number) => {
     const newAlert = { threshold, timestamp: new Date() }
-    setPriceAlerts(prev => [...prev, newAlert])
+    // setPriceAlerts(prev => [...prev, newAlert])
     
     // Store in localStorage for persistence
     const existingAlerts = JSON.parse(localStorage.getItem('priceAlerts') || '[]')

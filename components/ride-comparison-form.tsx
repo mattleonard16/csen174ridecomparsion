@@ -154,8 +154,8 @@ export default function RideComparisonForm() {
     multiplier: number;
   } | null>(null)
   const [timeRecommendations, setTimeRecommendations] = useState<string[]>([])
-  const [showPriceAlert, setShowPriceAlert] = useState(false)
-  const [priceAlertThreshold, setPriceAlertThreshold] = useState("")
+  // const [showPriceAlert, setShowPriceAlert] = useState(false)
+  // const [priceAlertThreshold, setPriceAlertThreshold] = useState("")
   
   const pickupRef = useRef<HTMLDivElement>(null)
   const destinationRef = useRef<HTMLDivElement>(null)
