@@ -167,14 +167,14 @@ function getBestTimeRecommendations(): string[] {
   }
 }
 
-// Realistic Bay Area rideshare rates (calibrated to match actual pricing during rush hour)
+// Realistic Bay Area rideshare rates (recalibrated to match UberX pricing for SCU -> SFO)
 const UBER = {
-  base: 2.20,           // Uber base fare SF Bay Area (increased to match real pricing)
-  perMile: 2.15,        // Per mile rate (increased significantly to match real pricing)
-  perMin: 0.45,         // Per minute rate (increased to match real pricing)
-  booking: 0.99,        // Booking fee (increased to match real pricing)
-  airportSurcharge: 4.25,  // SFO airport fee (increased)
-  minFare: 9.50,        // Minimum fare (increased)
+  base: 1.50,
+  perMile: 1.15, // Adjusted for SCU to SFO route
+  perMin: 0.30,  // Adjusted for SCU to SFO route
+  booking: 0.85,
+  airportSurcharge: 4.50,
+  minFare: 8.50,
 };
 
 function kmToMiles(km: number) {
@@ -189,22 +189,22 @@ async function getRideComparisons(pickupCoords: [number, number], destCoords: [n
 
   console.log(`Distance: ${distanceKm.toFixed(2)} km, Duration: ${durationMin.toFixed(1)} min, Surge: ${multiplier}x (${surgeReason})`);
 
-  // Realistic competitive rates (updated to match current market pricing)
+  // Realistic competitive rates (recalibrated based on new UberX pricing)
   const LYFT = { 
-    base: 1.85,           // Lyft typically lower base but increased
-    perMile: 2.05,        // Slightly lower per mile but increased
-    perMin: 0.42,         // Lower per minute but increased
-    booking: 0.75,        // Lower booking fee but increased
-    airportSurcharge: 4.25,  // Same airport fee as Uber
-    minFare: 8.75,        // Increased minimum fare
+    base: 1.40,           // Slightly cheaper than Uber
+    perMile: 1.12,        // Slightly cheaper per mile 
+    perMin: 0.28,         // Slightly cheaper per minute 
+    booking: 0.75,
+    airportSurcharge: 4.50,  // Match Uber
+    minFare: 8.00,
   };
   const TAXI = { 
-    base: 4.50,           // Taxi higher base (increased)
-    perMile: 3.25,        // Higher per mile (increased)
-    perMin: 0.65,         // Higher per minute (increased)
-    booking: 0.00,        // No booking fee
-    airportSurcharge: 0.00,  // No separate airport fee
-    minFare: 12.00,       // Increased minimum fare
+    base: 3.50,
+    perMile: 2.75, // Taxis are significantly more per mile
+    perMin: 0.55,
+    booking: 0.00,
+    airportSurcharge: 0.00,
+    minFare: 10.00,
   };
 
   // Airport fee logic
