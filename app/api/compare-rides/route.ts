@@ -82,42 +82,42 @@ function getTimeBasedMultiplier(): { multiplier: number; surgeReason: string } {
   const day = now.getDay() // 0 = Sunday, 1 = Monday, etc.
   const isWeekend = day === 0 || day === 6
 
-  // Determine rush factor (time-based only)
+  // Determine rush factor (time-based only) - More aggressive pricing to match real Uber
   let rushFactor = 1.0
   let timeReason = "Standard pricing"
 
-  // Rush hour (moderate increase)
+  // Rush hour (higher increase to match real pricing)
   if (!isWeekend && ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19))) {
-    rushFactor = 1.2
+    rushFactor = 1.4  // Increased from 1.2 to better match real rush hour prices
     timeReason = "Rush hour demand"
   }
-  // Weekend evening (moderate increase)
+  // Weekend evening (higher increase)
   else if ((day === 5 || day === 6) && (hour >= 20 || hour <= 2)) {
-    rushFactor = 1.25
+    rushFactor = 1.45
     timeReason = "Weekend nightlife demand"
   }
-  // Late night (slight increase)
+  // Late night (higher increase)
   else if (hour >= 23 || hour <= 5) {
-    rushFactor = 1.15
+    rushFactor = 1.3
     timeReason = "Late night premium"
   }
-  // Lunch time (very slight increase)
+  // Lunch time (slight increase)
   else if (hour >= 11 && hour <= 13) {
-    rushFactor = 1.1
+    rushFactor = 1.15
     timeReason = "Lunch hour demand"
   }
-  // Off-peak hours (discount)
+  // Off-peak hours (smaller discount)
   else if (hour >= 14 && hour <= 16) {
-    rushFactor = 0.9
+    rushFactor = 0.95  // Reduced discount
     timeReason = "Off-peak discount"
   }
 
-  // Simulate driver supply factor (independent of distance)
+  // More aggressive driver supply factor to match real surge conditions
   const driversNearby = Math.floor(2 + Math.random() * 6) // 2-8 drivers
-  const supplyFactor = 1 + Math.max(0, 4 - driversNearby) * 0.05 // Each missing driver adds 5%
+  const supplyFactor = 1 + Math.max(0, 5 - driversNearby) * 0.08 // More impact from low supply
 
-  // Final surge calculation (capped at 1.3x maximum)
-  const surgeFactor = Math.min(rushFactor * supplyFactor, 1.3)
+  // Higher surge cap to match real Uber pricing (up to 1.6x during peak)
+  const surgeFactor = Math.min(rushFactor * supplyFactor, 1.6)
 
   // Generate descriptive reason
   let surgeReason = timeReason
@@ -146,35 +146,35 @@ function getBestTimeRecommendations(): string[] {
     ]
   } else if (hour >= 7 && hour <= 9) {
     return [
-      "Rush hour pricing in effect. Expect 10-20% increase over standard rates",
-      "Best prices: 2-4 PM (10% discount during off-peak)"
+      "Rush hour pricing in effect. Expect 20-40% increase over standard rates",
+      "Best prices: 2-4 PM (5% discount during off-peak)"
     ]
   } else if (hour >= 17 && hour <= 19) {
     return [
       "Evening rush pricing. Consider waiting until after 8 PM for better rates",
-      "Best prices: 2-4 PM (10% discount during off-peak)"
+      "Best prices: 2-4 PM (5% discount during off-peak)"
     ]
   } else if (hour >= 20 || hour <= 5) {
     return [
-      "Late night premium in effect (15% increase for night service)",
+      "Late night premium in effect (30% increase for night service)",
       "Best prices: 2-4 PM (avoid peak hours for savings)"
     ]
   } else {
     return [
-      "Best prices: 2-4 PM (10% discount during off-peak)",
-      "Avoid rush hours: 7-9 AM and 5-7 PM (up to 20% increase)"
+      "Best prices: 2-4 PM (5% discount during off-peak)",
+      "Avoid rush hours: 7-9 AM and 5-7 PM (up to 40% increase)"
     ]
   }
 }
 
-// Realistic Bay Area rideshare rates (calibrated to match actual pricing)
+// Realistic Bay Area rideshare rates (calibrated to match actual pricing during rush hour)
 const UBER = {
-  base: 1.49,           // Uber base fare SF Bay Area
-  perMile: 1.65,        // Per mile rate (updated to match real pricing)
-  perMin: 0.35,         // Per minute rate (updated to match real pricing)
-  booking: 0.55,        // Booking fee
-  airportSurcharge: 2.75,  // SFO airport fee
-  minFare: 7.25,        // Minimum fare
+  base: 2.20,           // Uber base fare SF Bay Area (increased to match real pricing)
+  perMile: 2.15,        // Per mile rate (increased significantly to match real pricing)
+  perMin: 0.45,         // Per minute rate (increased to match real pricing)
+  booking: 0.99,        // Booking fee (increased to match real pricing)
+  airportSurcharge: 4.25,  // SFO airport fee (increased)
+  minFare: 9.50,        // Minimum fare (increased)
 };
 
 function kmToMiles(km: number) {
@@ -189,22 +189,22 @@ async function getRideComparisons(pickupCoords: [number, number], destCoords: [n
 
   console.log(`Distance: ${distanceKm.toFixed(2)} km, Duration: ${durationMin.toFixed(1)} min, Surge: ${multiplier}x (${surgeReason})`);
 
-  // Realistic competitive rates
+  // Realistic competitive rates (updated to match current market pricing)
   const LYFT = { 
-    base: 1.00,           // Lyft typically lower base
-    perMile: 1.58,        // Slightly lower per mile 
-    perMin: 0.33,         // Lower per minute 
-    booking: 0.50,        // Lower booking fee
-    airportSurcharge: 2.75,  // Same airport fee
-    minFare: 7.00,
+    base: 1.85,           // Lyft typically lower base but increased
+    perMile: 2.05,        // Slightly lower per mile but increased
+    perMin: 0.42,         // Lower per minute but increased
+    booking: 0.75,        // Lower booking fee but increased
+    airportSurcharge: 4.25,  // Same airport fee as Uber
+    minFare: 8.75,        // Increased minimum fare
   };
   const TAXI = { 
-    base: 3.50,           // Taxi higher base (keep current)
-    perMile: 2.65,        // Higher per mile
-    perMin: 0.45,         // Higher per minute
+    base: 4.50,           // Taxi higher base (increased)
+    perMile: 3.25,        // Higher per mile (increased)
+    perMin: 0.65,         // Higher per minute (increased)
     booking: 0.00,        // No booking fee
     airportSurcharge: 0.00,  // No separate airport fee
-    minFare: 8.50,
+    minFare: 12.00,       // Increased minimum fare
   };
 
   // Airport fee logic
