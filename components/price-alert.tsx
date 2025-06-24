@@ -58,7 +58,7 @@ export default function PriceAlert({ currentBestPrice, onSetAlert, onClose }: Pr
             Current best price: <strong>${currentBestPrice.toFixed(2)}</strong>
           </p>
           <p className="text-sm text-gray-500">
-            We'll notify you when any ride option drops below your threshold.
+            We&apos;ll notify you when any ride option drops below your threshold.
           </p>
         </div>
 
