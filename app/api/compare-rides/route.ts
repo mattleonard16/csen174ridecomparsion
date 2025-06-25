@@ -75,56 +75,66 @@ async function getDistanceAndDuration(
   return { distanceKm, durationMin }
 }
 
-// Calculate time-based pricing multiplier (realistic surge based on time + supply only)
-function getTimeBasedMultiplier(): { multiplier: number; surgeReason: string } {
+// Calculate realistic surge multiplier (more conservative, route-dependent)
+function getTimeBasedMultiplier(pickupCoords: [number, number], destCoords: [number, number]): { multiplier: number; surgeReason: string } {
   const now = new Date()
   const hour = now.getHours()
   const day = now.getDay() // 0 = Sunday, 1 = Monday, etc.
   const isWeekend = day === 0 || day === 6
 
-  // Determine rush factor (time-based only) - More aggressive pricing to match real Uber
+  // Check if this is a high-demand route (airports, major venues)
+  const isAirportRoute = Math.abs(pickupCoords[0] - -122.3839894) < 0.05 && Math.abs(pickupCoords[1] - 37.6224520) < 0.05 ||
+                        Math.abs(destCoords[0] - -122.3839894) < 0.05 && Math.abs(destCoords[1] - 37.6224520) < 0.05;
+
+  // Base surge probability - most of the time there's no surge
+  let surgeProbability = 0.2; // Only 20% chance of surge normally
   let rushFactor = 1.0
   let timeReason = "Standard pricing"
 
-  // Rush hour (higher increase to match real pricing)
+  // Increase surge probability during actual high-demand times
   if (!isWeekend && ((hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 19))) {
-    rushFactor = 1.4  // Increased from 1.2 to better match real rush hour prices
+    surgeProbability = 0.4; // 40% chance during rush hour
+    rushFactor = 1.3
     timeReason = "Rush hour demand"
   }
-  // Weekend evening (higher increase)
+  // Weekend evening (higher surge probability)
   else if ((day === 5 || day === 6) && (hour >= 20 || hour <= 2)) {
-    rushFactor = 1.45
+    surgeProbability = 0.6; // 60% chance weekend nights
+    rushFactor = 1.4
     timeReason = "Weekend nightlife demand"
   }
-  // Late night (higher increase)
+  // Late night (moderate increase)
   else if (hour >= 23 || hour <= 5) {
-    rushFactor = 1.3
+    surgeProbability = 0.3; // 30% chance late night
+    rushFactor = 1.25
     timeReason = "Late night premium"
   }
-  // Lunch time (slight increase)
-  else if (hour >= 11 && hour <= 13) {
-    rushFactor = 1.15
-    timeReason = "Lunch hour demand"
-  }
-  // Off-peak hours (smaller discount)
-  else if (hour >= 14 && hour <= 16) {
-    rushFactor = 0.95  // Reduced discount
-    timeReason = "Off-peak discount"
+  // Airport routes have higher surge probability
+  if (isAirportRoute) {
+    surgeProbability += 0.2;
   }
 
-  // More aggressive driver supply factor to match real surge conditions
+  // Random factor to determine if surge is actually active
+  const shouldHaveSurge = Math.random() < surgeProbability;
+  
+  if (!shouldHaveSurge) {
+    return { 
+      multiplier: 1.0, 
+      surgeReason: "Standard pricing" 
+    }
+  }
+
+  // If surge is active, calculate the multiplier
   const driversNearby = Math.floor(2 + Math.random() * 6) // 2-8 drivers
-  const supplyFactor = 1 + Math.max(0, 5 - driversNearby) * 0.08 // More impact from low supply
+  const supplyFactor = 1 + Math.max(0, 5 - driversNearby) * 0.06
 
-  // Higher surge cap to match real Uber pricing (up to 1.6x during peak)
-  const surgeFactor = Math.min(rushFactor * supplyFactor, 1.4)
+  // More conservative surge cap (usually 1.2x-1.4x, rarely higher)
+  const surgeFactor = Math.min(rushFactor * supplyFactor, 1.5)
 
   // Generate descriptive reason
   let surgeReason = timeReason
-  if (surgeFactor > 1.1) {
-    if (supplyFactor > 1.05) {
-      surgeReason += " + low driver availability"
-    }
+  if (supplyFactor > 1.05) {
+    surgeReason += " + low driver availability"
   }
 
   return { 
@@ -167,14 +177,14 @@ function getBestTimeRecommendations(): string[] {
   }
 }
 
-// Realistic Bay Area rideshare rates (recalibrated to match UberX pricing for SCU -> SFO)
+// Realistic Bay Area rideshare rates (calibrated to match real UberX pricing)
 const UBER = {
-  base: 1.35,           // Slightly higher than Lyft
-  perMile: 1.18,        // Brought in line with Lyft's pricing structure
-  perMin: 0.32,         // Slightly higher
-  booking: 0.95,
+  base: 1.25,           // Reduced base to match real pricing
+  perMile: 1.08,        // Reduced per-mile rate
+  perMin: 0.28,         // Reduced per-minute rate  
+  booking: 0.85,        // Reduced booking fee
   airportSurcharge: 4.25,
-  minFare: 9.00,
+  minFare: 8.50,        // Slightly reduced minimum
 };
 
 function kmToMiles(km: number) {
@@ -184,19 +194,19 @@ function kmToMiles(km: number) {
 // Generate simulated comparison data
 async function getRideComparisons(pickupCoords: [number, number], destCoords: [number, number]) {
   const { distanceKm, durationMin } = await getDistanceAndDuration(pickupCoords, destCoords);
-  const { multiplier, surgeReason } = getTimeBasedMultiplier();
+  const { multiplier, surgeReason } = getTimeBasedMultiplier(pickupCoords, destCoords);
   const distanceMiles = kmToMiles(distanceKm);
 
   console.log(`Distance: ${distanceKm.toFixed(2)} km, Duration: ${durationMin.toFixed(1)} min, Surge: ${multiplier}x (${surgeReason})`);
 
-  // Realistic competitive rates (recalibrated based on new UberX pricing)
+  // Realistic competitive rates (slightly more competitive than Uber)
   const LYFT = {
-    base: 1.20,           // Lower base, confirmed to be accurate
-    perMile: 1.15,        // This seems to be the right rate for the route
-    perMin: 0.30,
-    booking: 0.85,
+    base: 1.15,           // Lower base than Uber
+    perMile: 1.05,        // Slightly lower per-mile rate
+    perMin: 0.26,         // Lower per-minute rate
+    booking: 0.75,        // Lower booking fee
     airportSurcharge: 4.25,
-    minFare: 8.50,
+    minFare: 8.00,        // Lower minimum fare
   };
   const TAXI = { 
     base: 3.50,
@@ -221,10 +231,10 @@ async function getRideComparisons(pickupCoords: [number, number], destCoords: [n
   if (isAirport(pickupCoords, destCoords)) lyftBasePriceRaw += LYFT.airportSurcharge;
   if (lyftBasePriceRaw < LYFT.minFare) lyftBasePriceRaw = LYFT.minFare;
 
-  // Taxi: Use flat rate for Santa Clara <-> SFO, else metered with airport minimum
+  // Taxi
   let taxiBasePriceRaw;
   if (isSantaClaraToSFO(pickupCoords, destCoords)) {
-    taxiBasePriceRaw = 89 + Math.random() * (99 - 89); // Bias toward higher end
+    taxiBasePriceRaw = 89 + Math.random() * (99 - 89); 
   } else if (isAirport(pickupCoords, destCoords)) {
     taxiBasePriceRaw = Math.max(TAXI.base + TAXI.perMile * distanceMiles + TAXI.perMin * durationMin + TAXI.booking, 60);
   } else {
@@ -234,10 +244,8 @@ async function getRideComparisons(pickupCoords: [number, number], destCoords: [n
 
   // Apply time-based surge pricing
   const uberPriceRaw = uberBasePriceRaw * multiplier;
-  const lyftPriceRaw = lyftBasePriceRaw * multiplier; // Apply same surge, difference is in base price
-  const taxiPriceRaw = taxiBasePriceRaw * Math.min(multiplier, 1.2); // Taxis have less surge variation
-
-  // Surge affects wait times too
+  const lyftPriceRaw = lyftBasePriceRaw * multiplier; 
+  const taxiPriceRaw = taxiBasePriceRaw * Math.min(multiplier, 1.2); 
   const baseWaitTime = 2 + Math.floor(Math.random() * 5);
   const surgeWaitMultiplier = multiplier > 1.5 ? 1.5 : 1.0;
 

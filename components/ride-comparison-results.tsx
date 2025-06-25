@@ -1,6 +1,6 @@
 import { Clock, DollarSign, Users, AlertCircle, Share2, Bell } from "lucide-react"
 // import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useState } from "react"
+import { useState, memo } from "react"
 import PriceAlert from "./price-alert"
 
 type RideData = {
@@ -30,7 +30,7 @@ type RideComparisonResultsProps = {
   destination?: string;
 }
 
-export default function RideComparisonResults({ 
+export default memo(function RideComparisonResults({ 
   results, 
   insights, 
   surgeInfo, 
@@ -190,118 +190,160 @@ export default function RideComparisonResults({
   }, services[0])
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6">
-      {/* Action Buttons */}
-      <div className="flex justify-center gap-3">
-        <button
-          onClick={handleShare}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <Share2 className="h-4 w-4" />
-          Share Results
-        </button>
-        <button
-          onClick={() => setShowPriceAlert(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-        >
-          <Bell className="h-4 w-4" />
-          Price Alert
-        </button>
-      </div>
+    <div className="w-full max-w-6xl mx-auto space-y-8">
+      {/* Clean Header Section */}
+      <div className="text-center space-y-4">
+        <h2 className="text-3xl font-bold text-gray-900">Your Ride Options</h2>
+        
+        {/* Quick Summary */}
+        <div className="bg-gradient-to-r from-blue-50 to-teal-50 rounded-xl p-6 border border-blue-100">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div>
+              <div className="text-2xl font-bold text-green-600">{bestPrice.data.price}</div>
+              <div className="text-sm text-gray-600">Best Price ({bestPrice.name})</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-blue-600">{bestWaitTime.data.waitTime}</div>
+              <div className="text-sm text-gray-600">Fastest Pickup ({bestWaitTime.name})</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-purple-600">
+                ${(services.reduce((sum, s) => sum + parseFloat(s.data.price.replace('$', '')), 0) / 3).toFixed(0)}
+              </div>
+              <div className="text-sm text-gray-600">Average Price</div>
+            </div>
+          </div>
+        </div>
 
-      <div className="mt-8 space-y-6">
-        <h2 className="text-2xl font-bold">Comparison Results</h2>
-
+        {/* Smart Recommendation */}
         {insights && (
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md">
-            <div className="flex">
-              <AlertCircle className="h-5 w-5 text-blue-600 mr-2" />
-              <div className="text-blue-800">
-                <strong>Recommendation:</strong> {insights}
+          <div className="bg-white border border-blue-200 rounded-xl p-6 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+              </div>
+              <div className="text-left">
+                <div className="font-semibold text-gray-900 mb-1">💡 Smart Recommendation</div>
+                <div className="text-gray-700">{insights}</div>
               </div>
             </div>
           </div>
         )}
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Main Comparison Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {services.map((service) => (
             <div
               key={service.name}
-              className="bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition-shadow"
+              className={`bg-white rounded-2xl border-2 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 ${
+                service.name === bestPrice.name ? 'border-green-300 ring-2 ring-green-100' : 'border-gray-200'
+              }`}
             >
-              <div className={`h-2 ${service.color}`}></div>
-              <div className="p-4 border-b">
+              {/* Service Header */}
+              <div className={`${service.color} p-4`}>
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold">{service.name}</h3>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                      <span className={`font-bold text-lg ${service.textColor}`}>
+                        {service.name[0]}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold text-white">{service.name}</h3>
+                  </div>
                   {service.data.surgeMultiplier && (
-                    <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2 py-1 rounded">
+                    <span className="bg-orange-100 text-orange-800 text-xs font-medium px-3 py-1 rounded-full">
                       {service.data.surgeMultiplier} surge
                     </span>
                   )}
                 </div>
               </div>
-              <div className="p-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <DollarSign className="h-4 w-4 mr-2 text-gray-500" />
-                      <span>Price</span>
-                    </div>
-                    <span className={`font-bold ${service.name === bestPrice.name ? "text-green-600" : ""}`}>
-                      {service.data.price}
-                      {service.name === bestPrice.name && " (Best)"}
-                    </span>
-                  </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                      <span>Wait Time</span>
-                    </div>
-                    <span className={`font-bold ${service.name === bestWaitTime.name ? "text-green-600" : ""}`}>
+              {/* Price Highlight */}
+              <div className="p-6 text-center border-b border-gray-100">
+                <div className={`text-4xl font-bold mb-2 ${
+                  service.name === bestPrice.name ? 'text-green-600' : 'text-gray-800'
+                }`}>
+                  {service.data.price}
+                </div>
+                {service.name === bestPrice.name && (
+                  <div className="text-green-600 text-sm font-medium">💰 Best Price</div>
+                )}
+              </div>
+
+              {/* Details */}
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <div className={`text-2xl font-bold ${
+                      service.name === bestWaitTime.name ? 'text-blue-600' : 'text-gray-700'
+                    }`}>
                       {service.data.waitTime}
-                      {service.name === bestWaitTime.name && " (Best)"}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Users className="h-4 w-4 mr-2 text-gray-500" />
-                      <span>Drivers Nearby</span>
                     </div>
-                    <span className="font-bold">{service.data.driversNearby}</span>
+                    <div className="text-gray-500 text-sm">
+                      {service.name === bestWaitTime.name ? '⚡ Fastest' : 'Wait Time'}
+                    </div>
                   </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-700">{service.data.driversNearby}</div>
+                    <div className="text-gray-500 text-sm">Drivers</div>
+                  </div>
+                </div>
 
-                  <div className="pt-2 space-y-2">
-                    <button
-                      onClick={() => handleBooking(service.name)}
-                      className={`w-full py-2 px-4 border-2 rounded ${service.borderColor} ${service.textColor} ${service.hoverBg} ${service.hoverText} transition-colors ${service.name === 'Taxi' ? 'cursor-default' : 'cursor-pointer'}`}
-                      disabled={service.name === 'Taxi'}
-                    >
-                      {service.name === 'Taxi' ? `Call ${service.name}` : `Book with ${service.name}`}
-                    </button>
-                    
-                    {/* ETA Sharing Button */}
-                    <button
-                      onClick={() => handleShareETA(service.name, service.data.waitTime)}
-                      className="w-full py-1 px-3 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors flex items-center justify-center gap-1"
-                    >
-                      <Share2 className="h-3 w-3" />
-                      Share ETA
-                    </button>
-                  </div>
+                {/* Action Buttons */}
+                <div className="space-y-3 pt-4">
+                  <button
+                    onClick={() => handleBooking(service.name)}
+                    className={`w-full py-3 px-6 rounded-xl font-semibold transition-all duration-200 ${
+                      service.name === 'Taxi' 
+                        ? 'bg-gray-100 text-gray-500 cursor-not-allowed' 
+                        : `${service.color} text-white hover:opacity-90 transform hover:scale-105`
+                    }`}
+                    disabled={service.name === 'Taxi'}
+                  >
+                    {service.name === 'Taxi' ? `Call ${service.name}` : `Book ${service.name}`}
+                  </button>
+                  
+                  <button
+                    onClick={() => handleShareETA(service.name, service.data.waitTime)}
+                    className="w-full py-2 px-4 text-sm bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Share2 className="h-3 w-3" />
+                    Share ETA
+                  </button>
                 </div>
               </div>
             </div>
           ))}
         </div>
 
+      {/* Additional Information Section */}
+      <div className="space-y-4">
+        {/* Surge Information */}
+        {surgeInfo && surgeInfo.isActive && (
+          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
+                <span className="text-orange-600 text-sm">⚡</span>
+              </div>
+              <div className="text-orange-800">
+                <strong>Surge Pricing Active:</strong> {surgeInfo.reason} (approx. {surgeInfo.multiplier.toFixed(1)}× increase)
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Time Recommendations */}
         {timeRecommendations.length > 0 && (
-          <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-md">
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4">
             <div className="text-green-800">
-              <strong>Best Time Tips:</strong>
-              <ul className="mt-2 space-y-1">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                  <span className="text-green-600 text-sm">💡</span>
+                </div>
+                <strong>Best Time Tips:</strong>
+              </div>
+              <ul className="ml-8 space-y-1">
                 {timeRecommendations.map((tip, index) => (
                   <li key={index} className="text-sm">{tip}</li>
                 ))}
@@ -309,13 +351,24 @@ export default function RideComparisonResults({
             </div>
           </div>
         )}
+      </div>
 
-        {/* Surge note moved below results */}
-        {surgeInfo && surgeInfo.isActive && (
-          <div className="mt-4 text-sm italic text-orange-700">
-            Note: surge pricing is currently active due to {surgeInfo.reason} (approx. {surgeInfo.multiplier.toFixed(1)}× fare increase).
-          </div>
-        )}
+      {/* Action Buttons */}
+      <div className="flex justify-center gap-3 pt-6 border-t border-gray-200">
+        <button
+          onClick={handleShare}
+          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
+        >
+          <Share2 className="h-4 w-4" />
+          Share Results
+        </button>
+        <button
+          onClick={() => setShowPriceAlert(true)}
+          className="flex items-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition-colors shadow-sm"
+        >
+          <Bell className="h-4 w-4" />
+          Price Alert
+        </button>
       </div>
 
       {/* Price Alert Modal */}
@@ -328,4 +381,4 @@ export default function RideComparisonResults({
       )}
     </div>
   )
-}
+})

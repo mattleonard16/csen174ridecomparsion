@@ -1,5 +1,5 @@
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -49,7 +49,7 @@ type RouteMapClientProps = {
   destination: [number, number]; // [lon, lat]
 };
 
-export default function RouteMapClient({ pickup, destination }: RouteMapClientProps) {
+const RouteMapClient = ({ pickup, destination }: RouteMapClientProps) => {
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -94,8 +94,8 @@ export default function RouteMapClient({ pickup, destination }: RouteMapClientPr
     <div className="mt-4">
       <MapContainer center={center} zoom={10} style={{ height: 300, width: '100%' }}>
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution="&copy; OpenStreetMap contributors"
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
+          attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
         />
         
         {/* Pickup marker (green) */}
@@ -119,4 +119,6 @@ export default function RouteMapClient({ pickup, destination }: RouteMapClientPr
       </MapContainer>
     </div>
   );
-} 
+}
+
+export default memo(RouteMapClient); 
