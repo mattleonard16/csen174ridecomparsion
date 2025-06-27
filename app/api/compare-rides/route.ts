@@ -1,39 +1,214 @@
 import { type NextRequest, NextResponse } from 'next/server'
+import { checkRateLimit, cleanupRateLimiters } from '@/lib/rate-limiter'
+import { 
+  validateInput, 
+  RideComparisonRequestSchema, 
+  detectSuspiciousCoordinates,
+  detectSpamPatterns,
+  sanitizeString,
+  ValidationError 
+} from '@/lib/validation'
+import { verifyRecaptchaToken, RECAPTCHA_CONFIG } from '@/lib/recaptcha'
 
 // POST handler
 export async function POST(request: NextRequest) {
   try {
-    const { pickup, destination } = await request.json()
-
-    if (!pickup || !destination) {
-      return NextResponse.json({ error: 'Pickup and destination are required' }, { status: 400 })
+    // 1. Rate Limiting Check
+    const rateLimitResult = await checkRateLimit(request)
+    
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { 
+          error: 'Rate limit exceeded', 
+          details: rateLimitResult.reason,
+          retryAfter: Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000)
+        }, 
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000).toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remainingRequests.toString(),
+            'X-RateLimit-Reset': rateLimitResult.resetTime.toString()
+          }
+        }
+      )
     }
 
-    // Convert addresses to coordinates
-    const pickupCoords = await getCoordinatesFromAddress(pickup)
-    const destinationCoords = await getCoordinatesFromAddress(destination)
+         // 2. Parse and validate request body
+     const body = await request.json()
+     
+     // 3. reCAPTCHA Verification (if token provided)
+     if (body.recaptchaToken) {
+       const recaptchaResult = await verifyRecaptchaToken(
+         body.recaptchaToken,
+         RECAPTCHA_CONFIG.ACTIONS.RIDE_COMPARISON,
+         RECAPTCHA_CONFIG.NORMAL_THRESHOLD
+       )
+       
+       if (!recaptchaResult.success) {
+         console.warn('reCAPTCHA verification failed:', recaptchaResult.error)
+         
+         // For low scores, return a more user-friendly message
+         if (recaptchaResult.score !== undefined && recaptchaResult.score < 0.3) {
+           return NextResponse.json(
+             { 
+               error: 'Security verification failed. Please try again.',
+               details: 'Your request appears to be automated. Please try again in a few moments.'
+             }, 
+             { status: 403 }
+           )
+         }
+         
+         // For other failures, log but continue (graceful degradation)
+         console.warn('Continuing without reCAPTCHA verification due to:', recaptchaResult.error)
+       } else {
+         console.log(`reCAPTCHA verified: score ${recaptchaResult.score}, action ${recaptchaResult.action}`)
+       }
+     }
+     
+     // Legacy support: convert old format to new format
+     let requestData
+     if (body.pickup && body.destination) {
+       // Legacy format - convert to new format
+       requestData = {
+         from: {
+           name: sanitizeString(body.pickup),
+           lat: '0', // Will be geocoded
+           lng: '0'
+         },
+         to: {
+           name: sanitizeString(body.destination),
+           lat: '0', // Will be geocoded
+           lng: '0'
+         },
+         services: ['uber', 'lyft', 'taxi'] // Default all services
+       }
+     } else {
+       requestData = body
+     }
 
-    if (!pickupCoords || !destinationCoords) {
-      return NextResponse.json({ error: 'Could not geocode addresses' }, { status: 400 })
+         // Skip coordinate validation for legacy requests (will be geocoded)
+     const isLegacyRequest = body.pickup && body.destination
+     
+     if (!isLegacyRequest) {
+       // 4. Input Validation for new format
+      const validation = validateInput(RideComparisonRequestSchema, requestData, 'ride comparison request')
+      
+      if (!validation.success) {
+        return NextResponse.json(
+          { 
+            error: 'Invalid input', 
+            details: validation.errors.map(err => ({
+              field: err.field,
+              message: err.message
+            }))
+          }, 
+          { status: 400 }
+        )
+      }
+      
+             requestData = validation.data
+
+       // 5. Spam Detection
+      const fromName = requestData.from.name
+      const toName = requestData.to.name
+      
+      if (detectSpamPatterns(fromName) || detectSpamPatterns(toName)) {
+        return NextResponse.json(
+          { error: 'Invalid location names detected' }, 
+          { status: 400 }
+        )
+      }
+      
+      if (detectSuspiciousCoordinates(
+        { lat: requestData.from.lat, lng: requestData.from.lng },
+        { lat: requestData.to.lat, lng: requestData.to.lng }
+      )) {
+        return NextResponse.json(
+          { error: 'Invalid route: pickup and destination are too close' }, 
+          { status: 400 }
+        )
+      }
     }
 
-    // Get comparisons
-    const comparisons = await getRideComparisons(pickupCoords, destinationCoords)
+         // 6. Process request (legacy path)
+     if (isLegacyRequest) {
+       const { pickup, destination } = body
 
-    // Generate recommendation
-    const insights = generateAlgorithmicRecommendation(comparisons)
+       if (!pickup || !destination) {
+         return NextResponse.json({ error: 'Pickup and destination are required' }, { status: 400 })
+       }
 
-    return NextResponse.json({
-      comparisons,
-      insights,
-      pickupCoords,
-      destinationCoords,
-      surgeInfo: comparisons.surgeInfo,
-      timeRecommendations: comparisons.timeRecommendations,
-    })
+       // Convert addresses to coordinates
+       const pickupCoords = await getCoordinatesFromAddress(pickup)
+       const destinationCoords = await getCoordinatesFromAddress(destination)
+
+       if (!pickupCoords || !destinationCoords) {
+         return NextResponse.json({ error: 'Could not geocode addresses' }, { status: 400 })
+       }
+
+       // Get comparisons
+       const comparisons = await getRideComparisons(pickupCoords, destinationCoords)
+
+       // Generate recommendation
+       const insights = generateAlgorithmicRecommendation(comparisons)
+
+       return NextResponse.json({
+         comparisons,
+         insights,
+         pickupCoords,
+         destinationCoords,
+         surgeInfo: comparisons.surgeInfo,
+         timeRecommendations: comparisons.timeRecommendations,
+       }, {
+         headers: {
+           'X-RateLimit-Remaining': rateLimitResult.remainingRequests.toString(),
+           'X-RateLimit-Reset': rateLimitResult.resetTime.toString()
+         }
+       })
+     }
+
+            // 7. Process new format request (future enhancement)
+     // For now, convert to legacy format and process
+     const pickup = requestData.from.name
+     const destination = requestData.to.name
+
+     // Convert addresses to coordinates
+     const pickupCoords = await getCoordinatesFromAddress(pickup)
+     const destinationCoords = await getCoordinatesFromAddress(destination)
+
+     if (!pickupCoords || !destinationCoords) {
+       return NextResponse.json({ error: 'Could not geocode addresses' }, { status: 400 })
+     }
+
+     // Get comparisons
+     const comparisons = await getRideComparisons(pickupCoords, destinationCoords)
+
+     // Generate recommendation
+     const insights = generateAlgorithmicRecommendation(comparisons)
+
+            // 8. Add rate limit headers to successful responses
+     return NextResponse.json({
+       comparisons,
+       insights,
+       pickupCoords,
+       destinationCoords,
+       surgeInfo: comparisons.surgeInfo,
+       timeRecommendations: comparisons.timeRecommendations,
+     }, {
+       headers: {
+         'X-RateLimit-Remaining': rateLimitResult.remainingRequests.toString(),
+         'X-RateLimit-Reset': rateLimitResult.resetTime.toString()
+       }
+     })
   } catch (error) {
     console.error('Error comparing rides:', error)
     return NextResponse.json({ error: 'Failed to compare rides' }, { status: 500 })
+  } finally {
+    // Periodic cleanup (run occasionally)
+    if (Math.random() < 0.01) { // 1% chance per request
+      cleanupRateLimiters()
+    }
   }
 }
 
@@ -208,16 +383,16 @@ async function getRideComparisons(pickupCoords: [number, number], destCoords: [n
 
   // Realistic competitive rates (slightly more competitive than Uber)
   const LYFT = {
-    base: 1.15, // Lower base than Uber
-    perMile: 1.05, // Slightly lower per-mile rate
-    perMin: 0.26, // Lower per-minute rate
-    booking: 0.75, // Lower booking fee
+    base: 1.15, 
+    perMile: 1.05, 
+    perMin: 0.26, 
+    booking: 0.75, 
     airportSurcharge: 4.25,
-    minFare: 8.0, // Lower minimum fare
+    minFare: 8.0, 
   }
   const TAXI = {
     base: 3.5,
-    perMile: 2.75, // Taxis are significantly more per mile
+    perMile: 2.75, 
     perMin: 0.55,
     booking: 0.0,
     airportSurcharge: 0.0,

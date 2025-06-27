@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { MapPin, Navigation2, Loader2, Locate } from 'lucide-react'
+import { MapPin, Navigation2, Loader2, Locate, Shield } from 'lucide-react'
 import RideComparisonResults from './ride-comparison-results'
 import RouteMap from './RouteMap'
 import RouteHeader from './route-header'
+import { useRecaptcha } from '@/lib/hooks/use-recaptcha'
+import { RECAPTCHA_CONFIG } from '@/lib/recaptcha'
 
 // Common places for faster autocomplete
 const COMMON_PLACES = {
@@ -131,6 +133,9 @@ export default function RideComparisonForm() {
   const [pickup, setPickup] = useState('')
   const [destination, setDestination] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  
+  // reCAPTCHA integration
+  const { executeRecaptcha, isLoaded: isRecaptchaLoaded, error: recaptchaError } = useRecaptcha()
   const [results, setResults] = useState<{
     uber: {
       price: string
@@ -413,12 +418,27 @@ export default function RideComparisonForm() {
     setDestinationCoords(null)
 
     try {
+      // Execute reCAPTCHA v3 (invisible, no user interaction required)
+      let recaptchaToken = ''
+      if (isRecaptchaLoaded) {
+        try {
+          recaptchaToken = await executeRecaptcha(RECAPTCHA_CONFIG.ACTIONS.RIDE_COMPARISON)
+        } catch (recaptchaErr) {
+          console.warn('reCAPTCHA failed, proceeding without token:', recaptchaErr)
+          // Continue without reCAPTCHA token - the server will handle this gracefully
+        }
+      }
+
       const response = await fetch('/api/compare-rides', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ pickup, destination }),
+        body: JSON.stringify({ 
+          pickup, 
+          destination,
+          recaptchaToken // Include reCAPTCHA token if available
+        }),
       }).catch(error => {
         console.error('Fetch error:', error)
         throw new Error('Network error')
@@ -760,6 +780,18 @@ export default function RideComparisonForm() {
                 'Compare Rides'
               )}
             </button>
+            
+            {/* reCAPTCHA Protection Indicator */}
+            <div className="flex items-center justify-center text-xs text-gray-500 mt-2">
+              <Shield className="h-3 w-3 mr-1" />
+              {isRecaptchaLoaded ? (
+                <span>Protected by reCAPTCHA</span>
+              ) : recaptchaError ? (
+                <span className="text-orange-500">Security protection loading...</span>
+              ) : (
+                <span>Loading security protection...</span>
+              )}
+            </div>
           </form>
         </div>
       )}
