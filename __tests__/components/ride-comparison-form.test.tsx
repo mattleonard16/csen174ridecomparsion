@@ -5,7 +5,7 @@ import RideComparisonForm from '@/components/ride-comparison-form'
 describe('RideComparisonForm', () => {
   it('renders the form with all required elements', () => {
     render(<RideComparisonForm />)
-    
+
     expect(screen.getByLabelText(/pickup location/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/destination/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /compare rides/i })).toBeInTheDocument()
@@ -13,7 +13,7 @@ describe('RideComparisonForm', () => {
 
   it('shows loading state when form is submitted', async () => {
     render(<RideComparisonForm />)
-    
+
     const pickupInput = screen.getByLabelText(/pickup location/i)
     const destinationInput = screen.getByLabelText(/destination/i)
     const submitButton = screen.getByRole('button', { name: /compare rides/i })
@@ -27,7 +27,7 @@ describe('RideComparisonForm', () => {
 
   it('handles form submission and shows results', async () => {
     render(<RideComparisonForm />)
-    
+
     const pickupInput = screen.getByLabelText(/pickup location/i)
     const destinationInput = screen.getByLabelText(/destination/i)
     const submitButton = screen.getByRole('button', { name: /compare rides/i })
@@ -43,7 +43,7 @@ describe('RideComparisonForm', () => {
 
   it('validates required fields', async () => {
     render(<RideComparisonForm />)
-    
+
     const submitButton = screen.getByRole('button', { name: /compare rides/i })
     fireEvent.submit(submitButton)
 
@@ -53,25 +53,25 @@ describe('RideComparisonForm', () => {
 
   it('clears error state when valid input is provided', async () => {
     render(<RideComparisonForm />)
-    
+
     const pickupInput = screen.getByLabelText(/pickup location/i)
     const destinationInput = screen.getByLabelText(/destination/i)
     const submitButton = screen.getByRole('button', { name: /compare rides/i })
 
     // Submit empty form
     fireEvent.submit(submitButton)
-    
+
     // Fill in valid inputs
     await userEvent.type(pickupInput, '123 Main St')
     await userEvent.type(destinationInput, '456 Market St')
-    
+
     expect(pickupInput).not.toBeInvalid()
     expect(destinationInput).not.toBeInvalid()
   })
 
   it('disables submit button while loading', async () => {
     render(<RideComparisonForm />)
-    
+
     const pickupInput = screen.getByLabelText(/pickup location/i)
     const destinationInput = screen.getByLabelText(/destination/i)
     const submitButton = screen.getByRole('button', { name: /compare rides/i })
@@ -85,7 +85,7 @@ describe('RideComparisonForm', () => {
 
   it('handles input changes correctly', async () => {
     render(<RideComparisonForm />)
-    
+
     const pickupInput = screen.getByLabelText(/pickup location/i)
     const destinationInput = screen.getByLabelText(/destination/i)
 
@@ -99,9 +99,9 @@ describe('RideComparisonForm', () => {
   it('shows error message when API fails', async () => {
     // Mock fetch to simulate API failure
     global.fetch = jest.fn().mockRejectedValue(new Error('API Error'))
-    
+
     render(<RideComparisonForm />)
-    
+
     const pickupInput = screen.getByLabelText(/pickup location/i)
     const destinationInput = screen.getByLabelText(/destination/i)
     const submitButton = screen.getByRole('button', { name: /compare rides/i })
@@ -114,4 +114,4 @@ describe('RideComparisonForm', () => {
       expect(screen.getByText(/note: using simulated data/i)).toBeInTheDocument()
     })
   })
-}) 
+})

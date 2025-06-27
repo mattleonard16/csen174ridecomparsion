@@ -1,4 +1,4 @@
-import { Edit, RotateCcw } from "lucide-react"
+import { Edit, RotateCcw } from 'lucide-react'
 
 interface RouteHeaderProps {
   origin: string
@@ -8,7 +8,13 @@ interface RouteHeaderProps {
   className?: string
 }
 
-export default function RouteHeader({ origin, destination, onEdit, onReset, className = "" }: RouteHeaderProps) {
+export default function RouteHeader({
+  origin,
+  destination,
+  onEdit,
+  onReset,
+  className = '',
+}: RouteHeaderProps) {
   const formatLocation = (location: string) => {
     const parts = location.split(',')
     return parts[0].trim()
@@ -41,4 +47,4 @@ export default function RouteHeader({ origin, destination, onEdit, onReset, clas
       </div>
     </div>
   )
-} 
+}
