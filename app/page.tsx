@@ -1,4 +1,4 @@
-import RideComparisonForm from "@/components/ride-comparison-form"
+import RideComparisonForm from '@/components/ride-comparison-form'
 
 export default function Home() {
   return (
@@ -17,12 +17,12 @@ export default function Home() {
           </div>
           <div className="animate-fade-in-up animation-delay-200">
             <p className="text-xl sm:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto font-medium leading-relaxed">
-              Get real-time pricing across Uber, Lyft & Taxi services. 
+              Get real-time pricing across Uber, Lyft & Taxi services.
               <br className="hidden sm:block" />
               Smart recommendations powered by live surge data.
             </p>
           </div>
-          
+
           {/* Statistics/Trust Signals */}
           <div className="flex justify-center items-center gap-8 mb-8 flex-wrap text-sm text-gray-600">
             <div className="flex items-center gap-2">
@@ -38,7 +38,7 @@ export default function Home() {
               <span>Real-time surge alerts</span>
             </div>
           </div>
-          
+
           {/* Service Logos */}
           <div className="flex justify-center items-center gap-8 mb-8 flex-wrap">
             <div className="flex items-center gap-2">
@@ -68,19 +68,27 @@ export default function Home() {
             <h3 className="text-xl font-semibold text-gray-800 mb-6">Popular Bay Area Routes</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
               <button className="group bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg p-4 text-left transition-all duration-200 hover:shadow-md">
-                <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600">SFO → Downtown SF</div>
+                <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600">
+                  SFO → Downtown SF
+                </div>
                 <div className="text-xs text-gray-500 mt-1">~$45-65 • 35-50 min</div>
               </button>
               <button className="group bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg p-4 text-left transition-all duration-200 hover:shadow-md">
-                <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600">Stanford → Apple Park</div>
+                <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600">
+                  Stanford → Apple Park
+                </div>
                 <div className="text-xs text-gray-500 mt-1">~$15-25 • 15-20 min</div>
               </button>
               <button className="group bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg p-4 text-left transition-all duration-200 hover:shadow-md">
-                <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600">SJC → Santa Clara</div>
+                <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600">
+                  SJC → Santa Clara
+                </div>
                 <div className="text-xs text-gray-500 mt-1">~$20-30 • 20-25 min</div>
               </button>
               <button className="group bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg p-4 text-left transition-all duration-200 hover:shadow-md">
-                <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600">Palo Alto → Google</div>
+                <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600">
+                  Palo Alto → Google
+                </div>
                 <div className="text-xs text-gray-500 mt-1">~$12-18 • 10-15 min</div>
               </button>
             </div>
@@ -93,21 +101,27 @@ export default function Home() {
                 <span className="text-blue-600 text-xl">⚡</span>
               </div>
               <h3 className="font-semibold text-gray-800 mb-2">Real-time Pricing</h3>
-              <p className="text-gray-600 text-sm">Get current surge pricing and accurate fare estimates</p>
+              <p className="text-gray-600 text-sm">
+                Get current surge pricing and accurate fare estimates
+              </p>
             </div>
             <div className="bg-white rounded-lg p-6 shadow-sm border">
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
                 <span className="text-green-600 text-xl">🚗</span>
               </div>
               <h3 className="font-semibold text-gray-800 mb-2">Smart Recommendations</h3>
-              <p className="text-gray-600 text-sm">AI-powered suggestions for best value and fastest rides</p>
+              <p className="text-gray-600 text-sm">
+                AI-powered suggestions for best value and fastest rides
+              </p>
             </div>
             <div className="bg-white rounded-lg p-6 shadow-sm border">
               <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
                 <span className="text-purple-600 text-xl">📍</span>
               </div>
               <h3 className="font-semibold text-gray-800 mb-2">Bay Area Optimized</h3>
-              <p className="text-gray-600 text-sm">Specially tuned for San Francisco Bay Area routes</p>
+              <p className="text-gray-600 text-sm">
+                Specially tuned for San Francisco Bay Area routes
+              </p>
             </div>
           </div>
         </div>

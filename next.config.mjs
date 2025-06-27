@@ -1,14 +1,14 @@
-import withPWA from "next-pwa";
+import withPWA from 'next-pwa'
 
 const pwaConfig = {
-  dest: "public",
-  disable: process.env.NODE_ENV === "development",
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/.*\.tile\.openstreetmap\.org\/.*/i,
-      handler: "CacheFirst",
+      handler: 'CacheFirst',
       options: {
-        cacheName: "openstreetmap-tiles",
+        cacheName: 'openstreetmap-tiles',
         expiration: {
           maxEntries: 100,
           maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
@@ -17,9 +17,9 @@ const pwaConfig = {
     },
     {
       urlPattern: /^https:\/\/nominatim\.openstreetmap\.org\/.*/i,
-      handler: "NetworkFirst",
+      handler: 'NetworkFirst',
       options: {
-        cacheName: "nominatim-api",
+        cacheName: 'nominatim-api',
         expiration: {
           maxEntries: 50,
           maxAgeSeconds: 24 * 60 * 60, // 1 day
@@ -28,9 +28,9 @@ const pwaConfig = {
     },
     {
       urlPattern: /^http:\/\/router\.project-osrm\.org\/.*/i,
-      handler: "NetworkFirst",
+      handler: 'NetworkFirst',
       options: {
-        cacheName: "osrm-api",
+        cacheName: 'osrm-api',
         expiration: {
           maxEntries: 50,
           maxAgeSeconds: 60 * 60, // 1 hour
@@ -38,8 +38,8 @@ const pwaConfig = {
       },
     },
   ],
-};
+}
 
-const nextConfig = {};
+const nextConfig = {}
 
-export default withPWA(pwaConfig)(nextConfig);
+export default withPWA(pwaConfig)(nextConfig)
