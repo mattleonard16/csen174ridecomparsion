@@ -1,5 +1,5 @@
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet'
-import { useEffect, useState, memo } from 'react'
+import { useEffect, useState, memo, useCallback, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -32,18 +32,113 @@ const destinationIcon = new L.Icon({
   shadowSize: [41, 41],
 })
 
-// Component to fit bounds when route is loaded
-function FitBounds({ routeCoordinates }: { routeCoordinates: [number, number][] }) {
+// Performance monitoring component (only shown in development)
+function PerformanceMonitor({ 
+  updateCount, 
+  lastUpdateTime, 
+  routeLoadTime 
+}: { 
+  updateCount: number
+  lastUpdateTime: number
+  routeLoadTime: number | null
+}) {
+  if (process.env.NODE_ENV !== 'development') return null
+  
+  return (
+    <div className="absolute top-2 left-2 z-[1000] bg-black/70 text-white text-xs p-2 rounded font-mono">
+      <div>Updates: {updateCount}</div>
+      <div>Last: {lastUpdateTime}ms</div>
+      {routeLoadTime && <div>Route: {routeLoadTime}ms</div>}
+    </div>
+  )
+}
+
+// Enhanced map controller with smooth transitions
+function MapViewController({ 
+  pickup, 
+  destination, 
+  routeCoordinates, 
+  isRouteLoading,
+  onUpdateTiming
+}: { 
+  pickup: [number, number]
+  destination: [number, number]
+  routeCoordinates: [number, number][]
+  isRouteLoading: boolean
+  onUpdateTiming: (time: number) => void
+}) {
   const map = useMap()
+  const hasInitialized = useRef(false)
+  const updateStartTime = useRef<number>()
 
   useEffect(() => {
-    if (routeCoordinates.length > 0) {
-      const bounds = L.latLngBounds(routeCoordinates)
-      map.fitBounds(bounds, { padding: [20, 20] })
+    if (!map) return
+
+    updateStartTime.current = performance.now()
+
+    // Immediate markers update - don't wait for route
+    const markerBounds = L.latLngBounds([
+      [pickup[1], pickup[0]],
+      [destination[1], destination[0]]
+    ])
+
+    // Add padding to ensure markers are visible
+    const paddedBounds = markerBounds.pad(0.1)
+
+    if (!hasInitialized.current) {
+      // First load - instant fit
+      map.fitBounds(paddedBounds, { 
+        padding: [20, 20],
+        animate: false // No animation on first load for speed
+      })
+      hasInitialized.current = true
+    } else {
+      // Subsequent updates - smooth fly animation
+      map.flyToBounds(paddedBounds, {
+        padding: [20, 20],
+        duration: 1.0, // 1 second smooth animation
+        easeLinearity: 0.25
+      })
     }
-  }, [map, routeCoordinates])
+
+    // Report timing when animation completes
+    const timing = performance.now() - updateStartTime.current
+    onUpdateTiming(timing)
+  }, [map, pickup, destination, onUpdateTiming])
+
+  // Separate effect for route-based bounds (optional refinement)
+  useEffect(() => {
+    if (!map || !routeCoordinates.length || isRouteLoading) return
+
+    // When route loads, optionally refine the bounds (subtle adjustment)
+    const routeBounds = L.latLngBounds(routeCoordinates)
+    const currentBounds = map.getBounds()
+    
+    // Only adjust if route extends significantly beyond current view
+    if (!currentBounds.contains(routeBounds)) {
+      map.flyToBounds(routeBounds, {
+        padding: [15, 15],
+        duration: 0.8,
+        easeLinearity: 0.25
+      })
+    }
+  }, [map, routeCoordinates, isRouteLoading])
 
   return null
+}
+
+// Loading indicator component
+function RouteLoadingIndicator({ isLoading }: { isLoading: boolean }) {
+  if (!isLoading) return null
+  
+  return (
+    <div className="absolute top-2 right-2 z-[1000] bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg">
+      <div className="flex items-center space-x-2">
+        <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <span className="text-sm font-medium text-gray-700">Loading route...</span>
+      </div>
+    </div>
+  )
 }
 
 type RouteMapClientProps = {
@@ -53,57 +148,124 @@ type RouteMapClientProps = {
 
 const RouteMapClient = ({ pickup, destination }: RouteMapClientProps) => {
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([])
-  const [loading, setLoading] = useState(true)
+  const [isRouteLoading, setIsRouteLoading] = useState(false)
+  const [routeError, setRouteError] = useState(false)
+  const [updateCount, setUpdateCount] = useState(0)
+  const [lastUpdateTime, setLastUpdateTime] = useState(0)
+  const [routeLoadTime, setRouteLoadTime] = useState<number | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
+  const debounceTimeoutRef = useRef<NodeJS.Timeout>()
 
-  // Center the map between the two points (initial center)
+  // Optimized center calculation
   const center: [number, number] = [
     (pickup[1] + destination[1]) / 2,
     (pickup[0] + destination[0]) / 2,
   ]
 
-  // Fetch the actual route from OSRM
-  useEffect(() => {
-    const fetchRoute = async () => {
-      try {
-        const [pickupLon, pickupLat] = pickup
-        const [destLon, destLat] = destination
+  // Timing callback
+  const handleUpdateTiming = useCallback((time: number) => {
+    setLastUpdateTime(Math.round(time))
+    setUpdateCount(prev => prev + 1)
+  }, [])
 
-        const url = `http://router.project-osrm.org/route/v1/driving/${pickupLon},${pickupLat};${destLon},${destLat}?overview=full&geometries=geojson`
+  // Debounced route fetching
+  const fetchRoute = useCallback(async (
+    pickupCoords: [number, number], 
+    destCoords: [number, number],
+    signal: AbortSignal
+  ) => {
+    const routeStartTime = performance.now()
+    
+    try {
+      const [pickupLon, pickupLat] = pickupCoords
+      const [destLon, destLat] = destCoords
 
-        const response = await fetch(url)
-        const data = await response.json()
+      const url = `http://router.project-osrm.org/route/v1/driving/${pickupLon},${pickupLat};${destLon},${destLat}?overview=full&geometries=geojson`
 
-        if (data.code === 'Ok' && data.routes?.length > 0) {
-          const coordinates = data.routes[0].geometry.coordinates.map((coord: [number, number]) => [
-            coord[1],
-            coord[0],
-          ])
-          setRouteCoordinates(coordinates)
-        } else {
-          // Fallback to straight line if route fetch fails
-          setRouteCoordinates([
-            [pickup[1], pickup[0]],
-            [destination[1], destination[0]],
-          ])
-        }
-      } catch (error) {
-        console.error('Error fetching route:', error)
-        // Fallback to straight line
-        setRouteCoordinates([
-          [pickup[1], pickup[0]],
-          [destination[1], destination[0]],
+      const response = await fetch(url, { signal })
+      
+      if (!response.ok) throw new Error('Route fetch failed')
+      
+      const data = await response.json()
+
+      if (data.code === 'Ok' && data.routes?.length > 0) {
+        const coordinates = data.routes[0].geometry.coordinates.map((coord: [number, number]) => [
+          coord[1],
+          coord[0],
         ])
-      } finally {
-        setLoading(false)
+        setRouteCoordinates(coordinates)
+        setRouteError(false)
+        setRouteLoadTime(Math.round(performance.now() - routeStartTime))
+      } else {
+        throw new Error('No route found')
       }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.name : 'Unknown error'
+      if (errorMessage === 'AbortError') return // Ignore aborted requests
+      
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      console.warn('Route fetch failed, using fallback:', message)
+      // Fallback to straight line
+      setRouteCoordinates([
+        [pickupCoords[1], pickupCoords[0]],
+        [destCoords[1], destCoords[0]],
+      ])
+      setRouteError(true)
+      setRouteLoadTime(Math.round(performance.now() - routeStartTime))
+    }
+  }, [])
+
+  // Effect with debouncing and cancellation
+  useEffect(() => {
+    // Cancel any pending requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+    
+    // Clear any pending debounce
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current)
     }
 
-    fetchRoute()
-  }, [pickup, destination])
+    // Start loading immediately for UI feedback
+    setIsRouteLoading(true)
+
+    // Debounce route fetching to avoid spam
+    debounceTimeoutRef.current = setTimeout(async () => {
+      const abortController = new AbortController()
+      abortControllerRef.current = abortController
+
+      await fetchRoute(pickup, destination, abortController.signal)
+      
+      // Only set loading false if this request wasn't aborted
+      if (!abortController.signal.aborted) {
+        setIsRouteLoading(false)
+      }
+    }, 300) // 300ms debounce
+
+    // Cleanup
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current)
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
+  }, [pickup, destination, fetchRoute])
+
+  // Generate a unique key to force map updates when locations change significantly
+  const mapKey = `${pickup[0].toFixed(3)}-${pickup[1].toFixed(3)}-${destination[0].toFixed(3)}-${destination[1].toFixed(3)}`
 
   return (
-    <div className="mt-4">
-      <MapContainer center={center} zoom={10} style={{ height: 300, width: '100%' }}>
+    <div className="mt-4 relative">
+      <MapContainer 
+        key={mapKey}
+        center={center} 
+        zoom={10} 
+        style={{ height: 300, width: '100%' }}
+        className="rounded-lg overflow-hidden"
+      >
         <TileLayer
           url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}"
           attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community"
@@ -115,14 +277,46 @@ const RouteMapClient = ({ pickup, destination }: RouteMapClientProps) => {
         {/* Destination marker (red) */}
         <Marker position={[destination[1], destination[0]]} icon={destinationIcon} />
 
-        {/* Route polyline */}
-        {!loading && routeCoordinates.length > 0 && (
-          <>
-            <Polyline positions={routeCoordinates} color="#2563eb" weight={4} opacity={0.8} />
-            <FitBounds routeCoordinates={routeCoordinates} />
-          </>
+        {/* Route polyline with loading state */}
+        {routeCoordinates.length > 0 && (
+          <Polyline 
+            positions={routeCoordinates} 
+            color={routeError ? "#ef4444" : "#2563eb"} 
+            weight={4} 
+            opacity={isRouteLoading ? 0.4 : 0.8}
+            dashArray={routeError ? "10, 10" : undefined}
+          />
         )}
+
+        {/* Map view controller */}
+        <MapViewController 
+          pickup={pickup}
+          destination={destination}
+          routeCoordinates={routeCoordinates}
+          isRouteLoading={isRouteLoading}
+          onUpdateTiming={handleUpdateTiming}
+        />
       </MapContainer>
+
+      {/* Performance Monitor (development only) */}
+      <PerformanceMonitor 
+        updateCount={updateCount}
+        lastUpdateTime={lastUpdateTime}
+        routeLoadTime={routeLoadTime}
+      />
+
+      {/* Loading indicator overlay */}
+      <RouteLoadingIndicator isLoading={isRouteLoading} />
+      
+      {/* Error indicator */}
+      {routeError && !isRouteLoading && (
+        <div className="absolute bottom-2 left-2 z-[1000] bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+            <span className="text-xs text-orange-700">Using direct route</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

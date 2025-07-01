@@ -7,7 +7,7 @@ import RouteMap from './RouteMap'
 import RouteHeader from './route-header'
 import { useRecaptcha } from '@/lib/hooks/use-recaptcha'
 import { RECAPTCHA_CONFIG } from '@/lib/recaptcha'
-import { getPopularAirports, formatAirportDisplay } from '@/lib/airports'
+import { getPopularAirports } from '@/lib/airports'
 
 // Common places for faster autocomplete
 const COMMON_PLACES = {
@@ -369,6 +369,8 @@ export default function RideComparisonForm() {
     setPickup(suggestion.display_name)
     setSuggestions([])
     setShowPickupSuggestions(false)
+    // Immediately update coordinates for instant map response
+    setPickupCoords([parseFloat(suggestion.lon), parseFloat(suggestion.lat)])
   }
 
   const handleDestinationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -396,16 +398,37 @@ export default function RideComparisonForm() {
     setDestination(suggestion.display_name)
     setDestinationSuggestions([])
     setShowDestinationSuggestions(false)
+    // Immediately update coordinates for instant map response
+    setDestinationCoords([parseFloat(suggestion.lon), parseFloat(suggestion.lat)])
   }
 
   // Airport selector handlers
   const handleAirportSelect = (airportCode: string, airportName: string) => {
     const airportString = `${airportName} (${airportCode})`
-    if (airportSelectorMode === 'pickup') {
-      setPickup(airportString)
-    } else {
-      setDestination(airportString)
-    }
+    
+    // Get airport coordinates from our database
+    import('@/lib/airports').then(({ getAirportByCode }) => {
+      const airport = getAirportByCode(airportCode)
+      if (airport) {
+        const coords: [number, number] = [airport.coordinates[0], airport.coordinates[1]]
+        
+        if (airportSelectorMode === 'pickup') {
+          setPickup(airportString)
+          setPickupCoords(coords)
+        } else {
+          setDestination(airportString)
+          setDestinationCoords(coords)
+        }
+      } else {
+        // Fallback if airport not found
+        if (airportSelectorMode === 'pickup') {
+          setPickup(airportString)
+        } else {
+          setDestination(airportString)
+        }
+      }
+    })
+    
     setShowAirportSelector(false)
   }
 
@@ -517,7 +540,6 @@ export default function RideComparisonForm() {
       )
       setError('Note: Using simulated data due to API connection issues.')
       setShowForm(false)
-      // Don't set coordinates for simulated data
     } finally {
       setIsLoading(false)
     }
@@ -550,6 +572,8 @@ export default function RideComparisonForm() {
 
           if (data.display_name) {
             setPickup(data.display_name)
+            // Immediately set coordinates for instant map response
+            setPickupCoords([longitude, latitude])
             // Add haptic feedback if supported
             if (navigator.vibrate) {
               navigator.vibrate(50)
@@ -717,8 +741,11 @@ export default function RideComparisonForm() {
                   type="button"
                   onClick={() => {
                     const temp = pickup
+                    const tempCoords = pickupCoords
                     setPickup(destination)
                     setDestination(temp)
+                    setPickupCoords(destinationCoords)
+                    setDestinationCoords(tempCoords)
                     // Add haptic feedback
                     if (navigator.vibrate) {
                       navigator.vibrate(30)
@@ -892,7 +919,7 @@ export default function RideComparisonForm() {
             </div>
             <div className="p-3 border-t border-gray-100 bg-gray-50">
               <div className="text-xs text-gray-600 text-center">
-                Don't see your airport? Use the regular search above for other locations.
+                Don&apos;t see your airport? Use the regular search above for other locations.
               </div>
             </div>
           </div>
