@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import type { AirportInfo } from '@/lib/airports'
 
 interface Props {
