@@ -5,8 +5,7 @@ import {
   RideComparisonRequestSchema, 
   detectSuspiciousCoordinates,
   detectSpamPatterns,
-  sanitizeString,
-  ValidationError 
+  sanitizeString
 } from '@/lib/validation'
 import { verifyRecaptchaToken, RECAPTCHA_CONFIG } from '@/lib/recaptcha'
 
@@ -357,14 +356,14 @@ function getBestTimeRecommendations(): string[] {
   }
 }
 
-// Realistic Bay Area rideshare rates (calibrated to match real UberX pricing)
+
 const UBER = {
-  base: 1.25, // Reduced base to match real pricing
-  perMile: 1.08, // Reduced per-mile rate
-  perMin: 0.28, // Reduced per-minute rate
-  booking: 0.85, // Reduced booking fee
+  base: 1.25, 
+  perMile: 1.08, 
+  perMin: 0.28, 
+  booking: 0.85, 
   airportSurcharge: 4.25,
-  minFare: 8.5, // Slightly reduced minimum
+  minFare: 8.5, 
 }
 
 function kmToMiles(km: number) {
