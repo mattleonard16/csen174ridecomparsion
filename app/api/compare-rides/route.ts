@@ -8,6 +8,7 @@ import {
   sanitizeString
 } from '@/lib/validation'
 import { verifyRecaptchaToken, RECAPTCHA_CONFIG } from '@/lib/recaptcha'
+import { AIRPORT_COORDS } from '@/lib/airports'
 
 // POST handler
 export async function POST(request: NextRequest) {
@@ -249,6 +250,15 @@ async function getDistanceAndDuration(
   return { distanceKm, durationMin }
 }
 
+// Helper to check if either pickup or destination is near any major airport
+function isAirportRoute(pickup: [number, number], dest: [number, number], tolerance = 0.05) {
+  return AIRPORT_COORDS.some(([lon, lat]) => {
+    const nearPickup = Math.abs(pickup[0] - lon) < tolerance && Math.abs(pickup[1] - lat) < tolerance
+    const nearDest = Math.abs(dest[0] - lon) < tolerance && Math.abs(dest[1] - lat) < tolerance
+    return nearPickup || nearDest
+  })
+}
+
 // Calculate realistic surge multiplier (more conservative, route-dependent)
 function getTimeBasedMultiplier(
   pickupCoords: [number, number],
@@ -260,10 +270,7 @@ function getTimeBasedMultiplier(
   const isWeekend = day === 0 || day === 6
 
   // Check if this is a high-demand route (airports, major venues)
-  const isAirportRoute =
-    (Math.abs(pickupCoords[0] - -122.3839894) < 0.05 &&
-      Math.abs(pickupCoords[1] - 37.622452) < 0.05) ||
-    (Math.abs(destCoords[0] - -122.3839894) < 0.05 && Math.abs(destCoords[1] - 37.622452) < 0.05)
+  const airportLeg = isAirportRoute(pickupCoords, destCoords)
 
   // Base surge probability - most of the time there's no surge
   let surgeProbability = 0.2 // Only 20% chance of surge normally
@@ -289,7 +296,7 @@ function getTimeBasedMultiplier(
     timeReason = 'Late night premium'
   }
   // Airport routes have higher surge probability
-  if (isAirportRoute) {
+  if (airportLeg) {
     surgeProbability += 0.2
   }
 
@@ -398,10 +405,9 @@ async function getRideComparisons(pickupCoords: [number, number], destCoords: [n
     minFare: 10.0,
   }
 
-  // Airport fee logic
+  // Airport fee logic using new airport detection
   const isAirport = (pickup: [number, number], dest: [number, number]) =>
-    (Math.abs(pickup[0] - -122.3839894) < 0.05 && Math.abs(pickup[1] - 37.622452) < 0.05) ||
-    (Math.abs(dest[0] - -122.3839894) < 0.05 && Math.abs(dest[1] - 37.622452) < 0.05)
+    isAirportRoute(pickup, dest)
 
   // Calculate base prices first
   let uberBasePriceRaw =

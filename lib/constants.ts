@@ -1,4 +1,5 @@
 import type { CommonPlaces } from '@/types'
+import { AIRPORTS } from './airports'
 
 // Common places for faster autocomplete
 export const COMMON_PLACES: CommonPlaces = {
@@ -116,6 +117,22 @@ export const COMMON_PLACES: CommonPlaces = {
     lat: '37.3382',
     lon: '-121.8863',
   },
+}
+
+// Dynamically add airport entries to COMMON_PLACES
+for (const airport of AIRPORTS) {
+  const display = `${airport.name} (${airport.code}), ${airport.city}, ${airport.state}, USA`
+  const entry = {
+    display_name: display,
+    name: `${airport.name} (${airport.code})`,
+    lat: airport.lat.toString(),
+    lon: airport.lon.toString(),
+  }
+  // add key by IATA code and all synonyms
+  COMMON_PLACES[airport.code.toLowerCase()] = entry
+  for (const keyword of airport.synonyms) {
+    COMMON_PLACES[keyword.toLowerCase()] = entry
+  }
 }
 
 // Pricing constants for rideshare services
