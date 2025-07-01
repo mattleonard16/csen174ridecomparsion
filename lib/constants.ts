@@ -2,12 +2,7 @@ import type { CommonPlaces } from '@/types'
 
 // Common places for faster autocomplete
 export const COMMON_PLACES: CommonPlaces = {
-  'santa clara university': {
-    display_name: 'Santa Clara University, Santa Clara, CA, USA',
-    name: 'Santa Clara University',
-    lat: '37.3496',
-    lon: '-121.9390',
-  },
+  // Bay Area Airports
   'san jose airport': {
     display_name: 'San Jose International Airport (SJC), San Jose, CA, USA',
     name: 'San Jose Airport (SJC)',
@@ -43,6 +38,136 @@ export const COMMON_PLACES: CommonPlaces = {
     name: 'Oakland Airport (OAK)',
     lat: '37.7126',
     lon: '-122.2197',
+  },
+
+  // Major U.S. Airports
+  lax: {
+    display_name: 'Los Angeles International Airport (LAX), Los Angeles, CA, USA',
+    name: 'Los Angeles Airport (LAX)',
+    lat: '33.9425',
+    lon: '-118.4085',
+  },
+  'los angeles airport': {
+    display_name: 'Los Angeles International Airport (LAX), Los Angeles, CA, USA',
+    name: 'Los Angeles Airport (LAX)',
+    lat: '33.9425',
+    lon: '-118.4085',
+  },
+  jfk: {
+    display_name: 'John F. Kennedy International Airport (JFK), New York, NY, USA',
+    name: 'JFK Airport (JFK)',
+    lat: '40.6413',
+    lon: '-73.7781',
+  },
+  'jfk airport': {
+    display_name: 'John F. Kennedy International Airport (JFK), New York, NY, USA',
+    name: 'JFK Airport (JFK)',
+    lat: '40.6413',
+    lon: '-73.7781',
+  },
+  ewr: {
+    display_name: 'Newark Liberty International Airport (EWR), Newark, NJ, USA',
+    name: 'Newark Airport (EWR)',
+    lat: '40.6895',
+    lon: '-74.1745',
+  },
+  'newark airport': {
+    display_name: 'Newark Liberty International Airport (EWR), Newark, NJ, USA',
+    name: 'Newark Airport (EWR)',
+    lat: '40.6895',
+    lon: '-74.1745',
+  },
+  ord: {
+    display_name: "Chicago O'Hare International Airport (ORD), Chicago, IL, USA",
+    name: "O'Hare Airport (ORD)",
+    lat: '41.9742',
+    lon: '-87.9073',
+  },
+  "o'hare airport": {
+    display_name: "Chicago O'Hare International Airport (ORD), Chicago, IL, USA",
+    name: "O'Hare Airport (ORD)",
+    lat: '41.9742',
+    lon: '-87.9073',
+  },
+  'chicago airport': {
+    display_name: "Chicago O'Hare International Airport (ORD), Chicago, IL, USA",
+    name: "O'Hare Airport (ORD)",
+    lat: '41.9742',
+    lon: '-87.9073',
+  },
+  atl: {
+    display_name: 'Hartsfield-Jackson Atlanta International Airport (ATL), Atlanta, GA, USA',
+    name: 'Atlanta Airport (ATL)',
+    lat: '33.6407',
+    lon: '-84.4277',
+  },
+  'atlanta airport': {
+    display_name: 'Hartsfield-Jackson Atlanta International Airport (ATL), Atlanta, GA, USA',
+    name: 'Atlanta Airport (ATL)',
+    lat: '33.6407',
+    lon: '-84.4277',
+  },
+  sea: {
+    display_name: 'Seattle-Tacoma International Airport (SEA), Seattle, WA, USA',
+    name: 'Seattle Airport (SEA)',
+    lat: '47.4502',
+    lon: '-122.3088',
+  },
+  'seattle airport': {
+    display_name: 'Seattle-Tacoma International Airport (SEA), Seattle, WA, USA',
+    name: 'Seattle Airport (SEA)',
+    lat: '47.4502',
+    lon: '-122.3088',
+  },
+  den: {
+    display_name: 'Denver International Airport (DEN), Denver, CO, USA',
+    name: 'Denver Airport (DEN)',
+    lat: '39.8561',
+    lon: '-104.6737',
+  },
+  'denver airport': {
+    display_name: 'Denver International Airport (DEN), Denver, CO, USA',
+    name: 'Denver Airport (DEN)',
+    lat: '39.8561',
+    lon: '-104.6737',
+  },
+  bos: {
+    display_name: 'Boston Logan International Airport (BOS), Boston, MA, USA',
+    name: 'Boston Airport (BOS)',
+    lat: '42.3656',
+    lon: '-71.0096',
+  },
+  'boston airport': {
+    display_name: 'Boston Logan International Airport (BOS), Boston, MA, USA',
+    name: 'Boston Airport (BOS)',
+    lat: '42.3656',
+    lon: '-71.0096',
+  },
+  'logan airport': {
+    display_name: 'Boston Logan International Airport (BOS), Boston, MA, USA',
+    name: 'Boston Airport (BOS)',
+    lat: '42.3656',
+    lon: '-71.0096',
+  },
+  dfw: {
+    display_name: 'Dallas/Fort Worth International Airport (DFW), Dallas, TX, USA',
+    name: 'Dallas Airport (DFW)',
+    lat: '32.8968',
+    lon: '-97.0372',
+  },
+  'dallas airport': {
+    display_name: 'Dallas/Fort Worth International Airport (DFW), Dallas, TX, USA',
+    name: 'Dallas Airport (DFW)',
+    lat: '32.8968',
+    lon: '-97.0372',
+  },
+
+  // Bay Area Local Places
+  'santa clara university': {
+    display_name: 'Santa Clara University, Santa Clara, CA, USA',
+    name: 'Santa Clara University',
+    lat: '37.3496',
+    lon: '-121.9390',
   },
   'stanford university': {
     display_name: 'Stanford University, Stanford, CA, USA',

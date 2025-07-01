@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { MapPin, Navigation2, Loader2, Locate, Shield } from 'lucide-react'
+import { MapPin, Navigation2, Loader2, Locate, Shield, Plane } from 'lucide-react'
 import RideComparisonResults from './ride-comparison-results'
 import RouteMap from './RouteMap'
 import RouteHeader from './route-header'
 import { useRecaptcha } from '@/lib/hooks/use-recaptcha'
 import { RECAPTCHA_CONFIG } from '@/lib/recaptcha'
+import { getPopularAirports, formatAirportDisplay } from '@/lib/airports'
 
 // Common places for faster autocomplete
 const COMMON_PLACES = {
@@ -181,6 +182,8 @@ export default function RideComparisonForm() {
     multiplier: number
   } | null>(null)
   const [timeRecommendations, setTimeRecommendations] = useState<string[]>([])
+  const [showAirportSelector, setShowAirportSelector] = useState(false)
+  const [airportSelectorMode, setAirportSelectorMode] = useState<'pickup' | 'destination'>('pickup')
   // const [showPriceAlert, setShowPriceAlert] = useState(false)
   // const [priceAlertThreshold, setPriceAlertThreshold] = useState("")
 
@@ -393,6 +396,22 @@ export default function RideComparisonForm() {
     setDestination(suggestion.display_name)
     setDestinationSuggestions([])
     setShowDestinationSuggestions(false)
+  }
+
+  // Airport selector handlers
+  const handleAirportSelect = (airportCode: string, airportName: string) => {
+    const airportString = `${airportName} (${airportCode})`
+    if (airportSelectorMode === 'pickup') {
+      setPickup(airportString)
+    } else {
+      setDestination(airportString)
+    }
+    setShowAirportSelector(false)
+  }
+
+  const openAirportSelector = (mode: 'pickup' | 'destination') => {
+    setAirportSelectorMode(mode)
+    setShowAirportSelector(true)
   }
 
   // Cleanup timeouts on unmount
@@ -674,6 +693,18 @@ export default function RideComparisonForm() {
               )}
             </div>
 
+            {/* Airport Quick Select for Pickup */}
+            <div className="flex items-center justify-center">
+              <button
+                type="button"
+                onClick={() => openAirportSelector('pickup')}
+                className="flex items-center px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+              >
+                <Plane className="h-4 w-4 mr-2" />
+                Select Airport for Pickup
+              </button>
+            </div>
+
             <div className="space-y-2 relative" ref={destinationRef}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -760,6 +791,18 @@ export default function RideComparisonForm() {
               )}
             </div>
 
+            {/* Airport Quick Select for Destination */}
+            <div className="flex items-center justify-center">
+              <button
+                type="button"
+                onClick={() => openAirportSelector('destination')}
+                className="flex items-center px-4 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+              >
+                <Plane className="h-4 w-4 mr-2" />
+                Select Airport for Destination
+              </button>
+            </div>
+
             <button
               type="submit"
               className="w-full bg-blue-600 text-white py-4 px-6 rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-base font-medium touch-manipulation"
@@ -793,6 +836,66 @@ export default function RideComparisonForm() {
               )}
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Airport Selector Modal */}
+      {showAirportSelector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] overflow-hidden">
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Plane className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <div className="font-medium text-gray-900">
+                      Select Airport for {airportSelectorMode === 'pickup' ? 'Pickup' : 'Destination'}
+                    </div>
+                    <div className="text-sm text-gray-600">Choose from major U.S. airports</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAirportSelector(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            <div className="p-2 max-h-80 overflow-y-auto">
+              <div className="grid grid-cols-1 gap-1">
+                {getPopularAirports().map((airport) => (
+                  <button
+                    key={airport.code}
+                    onClick={() => handleAirportSelect(airport.code, airport.name)}
+                    className="p-3 text-left hover:bg-blue-50 rounded-md transition-colors group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900 group-hover:text-blue-600">
+                          {airport.code} - {airport.name}
+                        </div>
+                        <div className="text-sm text-gray-600 mt-1">
+                          {airport.city}, {airport.state}
+                        </div>
+                        {airport.terminals.length > 1 && (
+                          <div className="text-xs text-blue-600 mt-1">
+                            {airport.terminals.length} terminals available
+                          </div>
+                        )}
+                      </div>
+                      <MapPin className="h-4 w-4 text-gray-400 group-hover:text-blue-500 ml-2" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="p-3 border-t border-gray-100 bg-gray-50">
+              <div className="text-xs text-gray-600 text-center">
+                Don't see your airport? Use the regular search above for other locations.
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
