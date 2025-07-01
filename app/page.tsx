@@ -1,6 +1,54 @@
+'use client'
+
+import { useState } from 'react'
 import RideComparisonForm from '@/components/ride-comparison-form'
 
+// Popular routes data
+const POPULAR_ROUTES = [
+  {
+    id: 'sfo-downtown',
+    pickup: 'San Francisco International Airport (SFO), San Francisco, CA, USA',
+    destination: 'Downtown San Francisco, San Francisco, CA, USA',
+    displayName: 'SFO → Downtown SF',
+    estimatedPrice: '~$45-65',
+    estimatedTime: '35-50 min'
+  },
+  {
+    id: 'stanford-apple',
+    pickup: 'Stanford University, Stanford, CA, USA', 
+    destination: 'Apple Park, Cupertino, CA, USA',
+    displayName: 'Stanford → Apple Park',
+    estimatedPrice: '~$15-25',
+    estimatedTime: '15-20 min'
+  },
+  {
+    id: 'sjc-santa-clara',
+    pickup: 'San Jose International Airport (SJC), San Jose, CA, USA',
+    destination: 'Santa Clara, CA, USA',
+    displayName: 'SJC → Santa Clara', 
+    estimatedPrice: '~$20-30',
+    estimatedTime: '20-25 min'
+  },
+  {
+    id: 'palo-alto-google',
+    pickup: 'Palo Alto, CA, USA',
+    destination: 'Googleplex, Mountain View, CA, USA',
+    displayName: 'Palo Alto → Google',
+    estimatedPrice: '~$12-18', 
+    estimatedTime: '10-15 min'
+  }
+]
+
 export default function Home() {
+  const [selectedRoute, setSelectedRoute] = useState<{pickup: string, destination: string} | null>(null)
+
+  const handleRouteClick = (route: typeof POPULAR_ROUTES[0]) => {
+    setSelectedRoute({
+      pickup: route.pickup,
+      destination: route.destination
+    })
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center p-4 sm:p-6 md:p-24">
       <div className="z-10 w-full max-w-5xl items-center justify-between">
@@ -67,30 +115,20 @@ export default function Home() {
           <div className="mb-12">
             <h3 className="text-xl font-semibold text-gray-800 mb-6">Popular Bay Area Routes</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
-              <button className="group bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg p-4 text-left transition-all duration-200 hover:shadow-md">
-                <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600">
-                  SFO → Downtown SF
-                </div>
-                <div className="text-xs text-gray-500 mt-1">~$45-65 • 35-50 min</div>
-              </button>
-              <button className="group bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg p-4 text-left transition-all duration-200 hover:shadow-md">
-                <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600">
-                  Stanford → Apple Park
-                </div>
-                <div className="text-xs text-gray-500 mt-1">~$15-25 • 15-20 min</div>
-              </button>
-              <button className="group bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg p-4 text-left transition-all duration-200 hover:shadow-md">
-                <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600">
-                  SJC → Santa Clara
-                </div>
-                <div className="text-xs text-gray-500 mt-1">~$20-30 • 20-25 min</div>
-              </button>
-              <button className="group bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg p-4 text-left transition-all duration-200 hover:shadow-md">
-                <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600">
-                  Palo Alto → Google
-                </div>
-                <div className="text-xs text-gray-500 mt-1">~$12-18 • 10-15 min</div>
-              </button>
+              {POPULAR_ROUTES.map((route) => (
+                <button 
+                  key={route.id}
+                  onClick={() => handleRouteClick(route)}
+                  className="group bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg p-4 text-left transition-all duration-200 hover:shadow-md active:bg-blue-100 active:scale-95"
+                >
+                  <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600">
+                    {route.displayName}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {route.estimatedPrice} • {route.estimatedTime}
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -126,7 +164,10 @@ export default function Home() {
           </div>
         </div>
 
-        <RideComparisonForm />
+        <RideComparisonForm 
+          selectedRoute={selectedRoute}
+          onRouteProcessed={() => setSelectedRoute(null)}
+        />
       </div>
     </main>
   )
