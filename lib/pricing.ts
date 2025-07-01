@@ -1,6 +1,7 @@
 import type { Coordinates, ServiceType } from '@/types'
 import { PRICING_CONFIG } from './constants'
 import { kmToMiles } from './location'
+import { isAirportLocation } from './airports'
 
 /**
  * Calculate realistic surge multiplier based on time and location
@@ -15,10 +16,7 @@ export function getTimeBasedMultiplier(
   const isWeekend = day === 0 || day === 6
 
   // Check if this is a high-demand route (airports, major venues)
-  const isAirportRoute =
-    (Math.abs(pickupCoords[0] - -122.3839894) < 0.05 &&
-      Math.abs(pickupCoords[1] - 37.622452) < 0.05) ||
-    (Math.abs(destCoords[0] - -122.3839894) < 0.05 && Math.abs(destCoords[1] - 37.622452) < 0.05)
+  const isAirportRoute = isAirportLocation(pickupCoords) !== null || isAirportLocation(destCoords) !== null
 
   // Base surge probability - most of the time there's no surge
   let surgeProbability = 0.2 // Only 20% chance of surge normally
@@ -135,22 +133,8 @@ export function calculateFare(
 }
 
 /**
- * Check if route involves an airport for surcharge calculation
+ * Check if route involves an airport for surcharge calculation (updated to use new airport database)
  */
 export function hasAirportSurcharge(pickup: Coordinates, dest: Coordinates): boolean {
-  // Check for major Bay Area airports
-  const airports = [
-    { lat: 37.6213, lon: -122.379 }, // SFO
-    { lat: 37.3639, lon: -121.9289 }, // SJC
-    { lat: 37.7126, lon: -122.2197 }, // OAK
-  ]
-
-  const tolerance = 0.05
-
-  return airports.some(
-    airport =>
-      (Math.abs(pickup[1] - airport.lat) < tolerance &&
-        Math.abs(pickup[0] - airport.lon) < tolerance) ||
-      (Math.abs(dest[1] - airport.lat) < tolerance && Math.abs(dest[0] - airport.lon) < tolerance)
-  )
+  return isAirportLocation(pickup) !== null || isAirportLocation(dest) !== null
 }
