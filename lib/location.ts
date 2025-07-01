@@ -1,5 +1,6 @@
 import type { LocationSuggestion, Coordinates, Longitude, Latitude } from '@/types'
 import { COMMON_PLACES, API_CONFIG } from './constants'
+import { isAirportLocation, getAirportByCode } from './airports'
 
 // Cache for API results
 const searchCache = new Map<string, LocationSuggestion[]>()
@@ -143,15 +144,26 @@ export function kmToMiles(km: number): number {
 }
 
 /**
- * Check if coordinates represent an airport location
+ * Check if coordinates represent an airport location (uses new airport database)
  */
 export function isAirportRoute(pickup: Coordinates, dest: Coordinates): boolean {
-  const sfoCoords: Coordinates = [-122.3839894 as Longitude, 37.622452 as Latitude]
-  const tolerance = 0.05
+  return isAirportLocation(pickup) !== null || isAirportLocation(dest) !== null
+}
 
-  return (
-    (Math.abs(pickup[0] - sfoCoords[0]) < tolerance &&
-      Math.abs(pickup[1] - sfoCoords[1]) < tolerance) ||
-    (Math.abs(dest[0] - sfoCoords[0]) < tolerance && Math.abs(dest[1] - sfoCoords[1]) < tolerance)
-  )
+/**
+ * Get airport information for coordinates if it's an airport
+ */
+export function getAirportInfo(coordinates: Coordinates) {
+  return isAirportLocation(coordinates)
+}
+
+/**
+ * Check if a location string is an airport code
+ */
+export function parseAirportCode(locationString: string): string | null {
+  const airportCode = locationString.toUpperCase().match(/([A-Z]{3})/)?.[1]
+  if (airportCode && getAirportByCode(airportCode)) {
+    return airportCode
+  }
+  return null
 }
