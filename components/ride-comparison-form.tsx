@@ -129,7 +129,15 @@ const COMMON_PLACES = {
 // Cache for API results
 const searchCache = new Map()
 
-export default function RideComparisonForm() {
+interface RideComparisonFormProps {
+  selectedRoute?: {
+    pickup: string
+    destination: string
+  } | null
+  onRouteProcessed?: () => void
+}
+
+export default function RideComparisonForm({ selectedRoute, onRouteProcessed }: RideComparisonFormProps) {
   const [pickup, setPickup] = useState('')
   const [destination, setDestination] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -188,6 +196,75 @@ export default function RideComparisonForm() {
   const destinationRef = useRef<HTMLDivElement>(null)
   const debounceTimeoutRef = useRef<NodeJS.Timeout>()
   const destDebounceTimeoutRef = useRef<NodeJS.Timeout>()
+
+  // Handle popular route selection
+  useEffect(() => {
+    if (selectedRoute) {
+      setPickup(selectedRoute.pickup)
+      setDestination(selectedRoute.destination)
+      setShowForm(true) // Ensure form is visible
+      
+      // Auto-submit the form after setting the values
+      const submitForm = async () => {
+        setIsLoading(true)
+        setResults(null)
+        setInsights('')
+        setError('')
+        setPickupCoords(null)
+        setDestinationCoords(null)
+
+        try {
+          // Execute reCAPTCHA v3 (invisible, no user interaction required)
+          let recaptchaToken = ''
+          if (isRecaptchaLoaded) {
+            try {
+              recaptchaToken = await executeRecaptcha(RECAPTCHA_CONFIG.ACTIONS.RIDE_COMPARISON)
+            } catch (recaptchaErr) {
+              console.warn('reCAPTCHA failed, proceeding without token:', recaptchaErr)
+            }
+          }
+
+          const response = await fetch('/api/compare-rides', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              pickup: selectedRoute.pickup, 
+              destination: selectedRoute.destination,
+              recaptchaToken
+            }),
+          })
+
+          const data = await response.json()
+
+          if (!response.ok) {
+            setError('Failed to fetch ride comparisons for this route. Please try again.')
+            return
+          }
+
+          setResults(data.comparisons)
+          setInsights(data.insights)
+          setPickupCoords(data.pickupCoords)
+          setDestinationCoords(data.destinationCoords)
+          setSurgeInfo(data.surgeInfo || null)
+          setTimeRecommendations(data.timeRecommendations || [])
+          setShowForm(false)
+        } catch (error) {
+          console.error('Error:', error)
+          setError('Failed to get pricing for this route. Please try again.')
+        } finally {
+          setIsLoading(false)
+        }
+      }
+
+      // Small delay to allow UI to update
+      setTimeout(submitForm, 200)
+      
+      // Call the callback to clear the selected route
+      onRouteProcessed?.()
+    }
+  }, [selectedRoute, onRouteProcessed, isRecaptchaLoaded, executeRecaptcha])
 
   // Close suggestions when clicking outside
   useEffect(() => {
