@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import type { AirportInfo } from '@/lib/airports'
 
