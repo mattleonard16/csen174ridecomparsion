@@ -8,6 +8,7 @@ import {
   sanitizeString
 } from '@/lib/validation'
 import { verifyRecaptchaToken, RECAPTCHA_CONFIG } from '@/lib/recaptcha'
+import { isAirportLocation, getAirportByCode, parseAirportCode } from '@/lib/airports'
 
 // POST handler
 export async function POST(request: NextRequest) {
@@ -211,8 +212,19 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Geocode using OpenStreetMap Nominatim
+// Geocode using OpenStreetMap Nominatim, with airport code support
 async function getCoordinatesFromAddress(address: string): Promise<[number, number] | null> {
+  // First check if this is an airport code
+  const airportCode = parseAirportCode(address)
+  if (airportCode) {
+    const airport = getAirportByCode(airportCode)
+    if (airport) {
+      console.log(`Using airport coordinates for ${airportCode}:`, airport.coordinates)
+      return [airport.coordinates[0] as number, airport.coordinates[1] as number]
+    }
+  }
+
+  // Fall back to regular geocoding
   const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`
   const res = await fetch(url, {
     headers: {
@@ -260,10 +272,8 @@ function getTimeBasedMultiplier(
   const isWeekend = day === 0 || day === 6
 
   // Check if this is a high-demand route (airports, major venues)
-  const isAirportRoute =
-    (Math.abs(pickupCoords[0] - -122.3839894) < 0.05 &&
-      Math.abs(pickupCoords[1] - 37.622452) < 0.05) ||
-    (Math.abs(destCoords[0] - -122.3839894) < 0.05 && Math.abs(destCoords[1] - 37.622452) < 0.05)
+  const isAirportRoute = isAirportLocation([pickupCoords[0] as any, pickupCoords[1] as any]) !== null || 
+                        isAirportLocation([destCoords[0] as any, destCoords[1] as any]) !== null
 
   // Base surge probability - most of the time there's no surge
   let surgeProbability = 0.2 // Only 20% chance of surge normally
@@ -400,8 +410,8 @@ async function getRideComparisons(pickupCoords: [number, number], destCoords: [n
 
   // Airport fee logic
   const isAirport = (pickup: [number, number], dest: [number, number]) =>
-    (Math.abs(pickup[0] - -122.3839894) < 0.05 && Math.abs(pickup[1] - 37.622452) < 0.05) ||
-    (Math.abs(dest[0] - -122.3839894) < 0.05 && Math.abs(dest[1] - 37.622452) < 0.05)
+    isAirportLocation([pickup[0] as any, pickup[1] as any]) !== null ||
+    isAirportLocation([dest[0] as any, dest[1] as any]) !== null
 
   // Calculate base prices first
   let uberBasePriceRaw =
