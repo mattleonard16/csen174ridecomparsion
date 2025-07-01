@@ -41,12 +41,19 @@ const POPULAR_ROUTES = [
 
 export default function Home() {
   const [selectedRoute, setSelectedRoute] = useState<{pickup: string, destination: string} | null>(null)
+  const [processingRouteId, setProcessingRouteId] = useState<string | null>(null)
 
   const handleRouteClick = (route: typeof POPULAR_ROUTES[0]) => {
+    setProcessingRouteId(route.id)
     setSelectedRoute({
       pickup: route.pickup,
       destination: route.destination
     })
+  }
+
+  const handleRouteProcessed = () => {
+    setSelectedRoute(null)
+    setProcessingRouteId(null)
   }
 
   return (
@@ -115,20 +122,33 @@ export default function Home() {
           <div className="mb-12">
             <h3 className="text-xl font-semibold text-gray-800 mb-6">Popular Bay Area Routes</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
-              {POPULAR_ROUTES.map((route) => (
-                <button 
-                  key={route.id}
-                  onClick={() => handleRouteClick(route)}
-                  className="group bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg p-4 text-left transition-all duration-200 hover:shadow-md active:bg-blue-100 active:scale-95"
-                >
-                  <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600">
-                    {route.displayName}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {route.estimatedPrice} • {route.estimatedTime}
-                  </div>
-                </button>
-              ))}
+              {POPULAR_ROUTES.map((route) => {
+                const isProcessing = processingRouteId === route.id
+                return (
+                  <button 
+                    key={route.id}
+                    onClick={() => handleRouteClick(route)}
+                    disabled={isProcessing}
+                    className={`group border rounded-lg p-4 text-left transition-all duration-200 hover:shadow-md active:scale-95 ${
+                      isProcessing 
+                        ? 'bg-blue-50 border-blue-300 cursor-not-allowed' 
+                        : 'bg-white hover:bg-blue-50 border-gray-200 hover:border-blue-300'
+                    }`}
+                  >
+                    <div className={`text-sm font-medium flex items-center gap-2 ${
+                      isProcessing ? 'text-blue-600' : 'text-gray-900 group-hover:text-blue-600'
+                    }`}>
+                      {isProcessing && (
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                      )}
+                      {route.displayName}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {isProcessing ? 'Getting live prices...' : `${route.estimatedPrice} • ${route.estimatedTime}`}
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
@@ -166,7 +186,7 @@ export default function Home() {
 
         <RideComparisonForm 
           selectedRoute={selectedRoute}
-          onRouteProcessed={() => setSelectedRoute(null)}
+          onRouteProcessed={handleRouteProcessed}
         />
       </div>
     </main>
