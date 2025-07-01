@@ -31,6 +31,15 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+  
+  /* Scroll Snap Utilities */
+  .scroll-snap-y {
+    scroll-snap-type: y mandatory;
+  }
+  
+  .snap-start {
+    scroll-snap-align: start;
+  }
 }
 
 @layer base {
@@ -99,6 +108,18 @@ body {
   * {
     @apply border-border;
   }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Disable smooth scroll for users who prefer reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+  
   body {
     @apply bg-background text-foreground;
   }
