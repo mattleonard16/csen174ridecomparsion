@@ -168,7 +168,7 @@ const RouteMapClient = ({ pickup, destination }: RouteMapClientProps) => {
     setUpdateCount(prev => prev + 1)
   }, [])
 
-  // Debounced route fetching
+  // Enhanced route fetching with HTTPS and better debugging
   const fetchRoute = useCallback(async (
     pickupCoords: [number, number], 
     destCoords: [number, number],
@@ -180,35 +180,65 @@ const RouteMapClient = ({ pickup, destination }: RouteMapClientProps) => {
       const [pickupLon, pickupLat] = pickupCoords
       const [destLon, destLat] = destCoords
 
-      const url = `http://router.project-osrm.org/route/v1/driving/${pickupLon},${pickupLat};${destLon},${destLat}?overview=full&geometries=geojson`
+      // Use HTTPS endpoint to avoid mixed content issues
+      const url = `https://router.project-osrm.org/route/v1/driving/${pickupLon},${pickupLat};${destLon},${destLat}?overview=full&geometries=geojson&alternatives=false`
 
-      const response = await fetch(url, { signal })
+      console.log('🌐 Fetching route:', { url, pickup: [pickupLon, pickupLat], destination: [destLon, destLat] })
+
+      const response = await fetch(url, { 
+        signal,
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+        mode: 'cors'
+      })
       
-      if (!response.ok) throw new Error('Route fetch failed')
+      console.log('📡 Response status:', response.status, response.statusText)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
       
       const data = await response.json()
+      console.log('📦 OSRM response:', { 
+        code: data.code, 
+        routesCount: data.routes?.length,
+        coordinatesCount: data.routes?.[0]?.geometry?.coordinates?.length 
+      })
 
       if (data.code === 'Ok' && data.routes?.length > 0) {
-        const coordinates = data.routes[0].geometry.coordinates.map((coord: [number, number]) => [
-          coord[1],
-          coord[0],
+        const route = data.routes[0]
+        
+        if (!route.geometry?.coordinates) {
+          throw new Error('Route geometry missing')
+        }
+
+        // Convert coordinates from [lon, lat] to [lat, lon] for Leaflet
+        const coordinates = route.geometry.coordinates.map((coord: [number, number]) => [
+          coord[1], // latitude
+          coord[0], // longitude
         ])
+
+        console.log('✅ Route success:', coordinates.length, 'waypoints')
         setRouteCoordinates(coordinates)
         setRouteError(false)
         setRouteLoadTime(Math.round(performance.now() - routeStartTime))
       } else {
-        throw new Error('No route found')
+        throw new Error(`OSRM error: ${data.code} - ${data.message || 'No route found'}`)
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.name : 'Unknown error'
       if (errorMessage === 'AbortError') return // Ignore aborted requests
       
       const message = error instanceof Error ? error.message : 'Unknown error'
-      console.warn('Route fetch failed, using fallback:', message)
+      console.error('❌ Route fetch failed:', message)
+      
       // Fallback to straight line
+      console.log('⚠️ Using fallback direct route')
       setRouteCoordinates([
-        [pickupCoords[1], pickupCoords[0]],
-        [destCoords[1], destCoords[0]],
+        [pickupCoords[1], pickupCoords[0]], // [lat, lon]
+        [destCoords[1], destCoords[0]],     // [lat, lon]
       ])
       setRouteError(true)
       setRouteLoadTime(Math.round(performance.now() - routeStartTime))
