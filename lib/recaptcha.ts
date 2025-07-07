@@ -11,12 +11,34 @@
  */
 
 // Test keys (always pass validation - use for development)
-const TEST_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'
-const TEST_SECRET_KEY = '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe'
+const TEST_SITE_KEY = '6LfQYHsrAAAAACqE_KWmFb6gasBfKJcgzXCP5AfE'
+const TEST_SECRET_KEY = '6LfQYHsrAAAAACYW6Hi_jlKbuAgR6N4_KLilX4lJ'
 
 // Get reCAPTCHA keys from environment
 export const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || TEST_SITE_KEY
 export const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY || TEST_SECRET_KEY
+
+/**
+ * Choose the correct site-key at runtime.
+ *
+ * Localhost, 127.0.0.1 and Vercel preview deployments (*.vercel.app) are not
+ * usually whitelisted in the reCAPTCHA admin console, so we automatically
+ * fall back to Google’s public test key for those hosts to avoid “Invalid
+ * domain” errors while still exercising the flow in development/CI.
+ */
+export function getRecaptchaSiteKey(): string {
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname
+    if (
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host.endsWith('.vercel.app') // Vercel preview URLs
+    ) {
+      return TEST_SITE_KEY
+    }
+  }
+  return RECAPTCHA_SITE_KEY
+}
 
 /**
  * Load reCAPTCHA v3 script
@@ -31,7 +53,9 @@ export function loadRecaptchaScript(): Promise<void> {
 
     // Create script element
     const script = document.createElement('script')
-    script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`
+    // Use runtime-determined key so that local/preview domains get the test key
+    const siteKeyToUse = getRecaptchaSiteKey()
+    script.src = `https://www.google.com/recaptcha/api.js?render=${siteKeyToUse}`
     script.async = true
     script.defer = true
 
@@ -71,7 +95,7 @@ export async function executeRecaptcha(action: string = 'submit'): Promise<strin
   return new Promise((resolve, reject) => {
     window.grecaptcha.ready(() => {
       window.grecaptcha
-        .execute(RECAPTCHA_SITE_KEY, { action })
+        .execute(getRecaptchaSiteKey(), { action })
         .then((token: string) => {
           resolve(token)
         })
