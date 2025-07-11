@@ -1,0 +1,118 @@
+{
+  "version": "2024.2",
+  "lastUpdated": "2024-06-30",
+  "services": {
+    "uber": {
+      "base": 2.85,
+      "perMile": 1.58,
+      "perMin": 0.42,
+      "booking": 1.65,
+      "safetyFee": 0.75,
+      "minFare": 9.25,
+      "maxSurge": 2.5,
+      "airportPickupFee": 6.50,
+      "airportDropoffFee": 3.25,
+      "cbdSurcharge": 3.50,
+      "longRideFee": {
+        "threshold": 25,
+        "fee": 5.50
+      }
+    },
+    "lyft": {
+      "base": 2.65,
+      "perMile": 1.48,
+      "perMin": 0.38,
+      "booking": 1.45,
+      "safetyFee": 0.65,
+      "minFare": 8.95,
+      "maxSurge": 2.3,
+      "airportPickupFee": 6.25,
+      "airportDropoffFee": 3.00,
+      "cbdSurcharge": 3.25,
+      "longRideFee": {
+        "threshold": 25,
+        "fee": 5.25
+      }
+    },
+    "taxi": {
+      "base": 4.25,
+      "perMile": 3.15,
+      "perMin": 0.65,
+      "booking": 0.0,
+      "safetyFee": 0.0,
+      "minFare": 15.0,
+      "maxSurge": 1.4,
+      "airportPickupFee": 6.50,
+      "airportDropoffFee": 0.0,
+      "cbdSurcharge": 3.00,
+      "longRideFee": {
+        "threshold": 30,
+        "fee": 5.00
+      }
+    }
+  },
+  "surgeSchedule": {
+    "weekday": {
+      "06:00-06:30": 1.1,
+      "06:30-07:00": 1.2,
+      "07:00-07:30": 1.25,
+      "07:30-08:00": 1.35,
+      "08:00-08:30": 1.45,
+      "08:30-09:00": 1.35,
+      "09:00-09:30": 1.25,
+      "09:30-10:00": 1.1,
+      "10:00-16:30": 1.0,
+      "16:30-17:00": 1.15,
+      "17:00-17:30": 1.25,
+      "17:30-18:00": 1.35,
+      "18:00-18:30": 1.55,
+      "18:30-19:00": 1.45,
+      "19:00-19:30": 1.35,
+      "19:30-20:00": 1.25,
+      "20:00-23:00": 1.1,
+      "23:00-01:00": 1.25,
+      "01:00-06:00": 1.15
+    },
+    "weekend": {
+      "06:00-10:00": 1.0,
+      "10:00-12:00": 1.05,
+      "12:00-14:00": 1.1,
+      "14:00-18:00": 1.05,
+      "18:00-20:00": 1.15,
+      "20:00-22:00": 1.35,
+      "22:00-01:00": 1.65,
+      "01:00-03:00": 1.85,
+      "03:00-06:00": 1.45
+    }
+  },
+  "locationModifiers": {
+    "airports": {
+      "lateNight": 1.25,
+      "peakHours": 1.35,
+      "holiday": 1.6
+    },
+    "downtown": {
+      "businessHours": 1.15,
+      "nightlife": 1.35,
+      "events": 1.8
+    },
+    "suburbs": {
+      "standard": 1.0,
+      "lateNight": 1.1
+    }
+  },
+  "trafficModifiers": {
+    "light": 1.0,
+    "moderate": 1.1,
+    "heavy": 1.25,
+    "severe": 1.4
+  },
+  "specialDates": {
+    "newYearsEve": 2.5,
+    "halloween": 1.8,
+    "saintPatricksDay": 1.6,
+    "fourthOfJuly": 1.7,
+    "thanksgiving": 1.4,
+    "christmas": 1.5
+  }
+} 
