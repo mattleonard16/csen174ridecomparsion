@@ -1,0 +1,233 @@
+[
+  {
+    "id": "sf_downtown_to_sfo_rush",
+    "description": "SF Financial District to SFO during evening rush",
+    "pickup": [-122.4005, 37.7945],
+    "destination": [-122.3892, 37.6213],
+    "timestamp": "2024-06-27T18:15:00.000Z",
+    "distanceKm": 28.5,
+    "durationMin": 45,
+    "actualUberPrice": 68.50,
+    "notes": "Rush hour + airport dropoff + long ride"
+  },
+  {
+    "id": "sfo_to_sf_late_night",
+    "description": "SFO to SF Mission at 2 AM",
+    "pickup": [-122.3892, 37.6213],
+    "destination": [-122.4194, 37.7749],
+    "timestamp": "2024-06-28T02:00:00.000Z",
+    "distanceKm": 25.2,
+    "durationMin": 32,
+    "actualUberPrice": 72.25,
+    "notes": "Late night premium + airport pickup"
+  },
+  {
+    "id": "sf_short_downtown",
+    "description": "Short trip within SF downtown",
+    "pickup": [-122.4005, 37.7945],
+    "destination": [-122.4089, 37.7853],
+    "timestamp": "2024-06-27T14:30:00.000Z",
+    "distanceKm": 2.1,
+    "durationMin": 8,
+    "actualUberPrice": 12.75,
+    "notes": "Short downtown trip, off-peak"
+  },
+  {
+    "id": "sf_to_sj_weekday_morning",
+    "description": "SF to San Jose during morning rush",
+    "pickup": [-122.4194, 37.7749],
+    "destination": [-121.8863, 37.3382],
+    "timestamp": "2024-06-27T08:30:00.000Z",
+    "distanceKm": 75.3,
+    "durationMin": 85,
+    "actualUberPrice": 125.40,
+    "notes": "Long distance + rush hour + long ride fee"
+  },
+  {
+    "id": "sj_to_sfo_weekend_night",
+    "description": "San Jose to SFO on Saturday night",
+    "pickup": [-121.8863, 37.3382],
+    "destination": [-122.3892, 37.6213],
+    "timestamp": "2024-06-29T23:45:00.000Z",
+    "distanceKm": 45.2,
+    "durationMin": 52,
+    "actualUberPrice": 89.75,
+    "notes": "Weekend night + airport dropoff"
+  },
+  {
+    "id": "sf_suburbs_normal",
+    "description": "SF to Palo Alto, normal hours",
+    "pickup": [-122.4194, 37.7749],
+    "destination": [-122.1430, 37.4419],
+    "timestamp": "2024-06-27T11:00:00.000Z",
+    "distanceKm": 52.1,
+    "durationMin": 58,
+    "actualUberPrice": 78.90,
+    "notes": "Long distance, off-peak"
+  },
+  {
+    "id": "oakland_airport_pickup",
+    "description": "Oakland Airport to Berkeley",
+    "pickup": [-122.2197, 37.7214],
+    "destination": [-122.2728, 37.8715],
+    "timestamp": "2024-06-27T16:20:00.000Z",
+    "distanceKm": 18.7,
+    "durationMin": 28,
+    "actualUberPrice": 35.60,
+    "notes": "Airport pickup fee"
+  },
+  {
+    "id": "sf_evening_surge",
+    "description": "SF Mission to Financial District, peak surge",
+    "pickup": [-122.4194, 37.7749],
+    "destination": [-122.4005, 37.7945],
+    "timestamp": "2024-06-27T18:45:00.000Z",
+    "distanceKm": 4.8,
+    "durationMin": 18,
+    "actualUberPrice": 28.40,
+    "notes": "Rush hour surge in city"
+  },
+  {
+    "id": "sf_minimum_fare",
+    "description": "Very short SF trip hitting minimum fare",
+    "pickup": [-122.4089, 37.7853],
+    "destination": [-122.4067, 37.7875],
+    "timestamp": "2024-06-27T15:00:00.000Z",
+    "distanceKm": 0.8,
+    "durationMin": 4,
+    "actualUberPrice": 9.25,
+    "notes": "Minimum fare applied"
+  },
+  {
+    "id": "sj_airport_rush_pickup",
+    "description": "San Jose Airport pickup during rush",
+    "pickup": [-121.9291, 37.3626],
+    "destination": [-121.8863, 37.3382],
+    "timestamp": "2024-06-27T17:30:00.000Z",
+    "distanceKm": 6.2,
+    "durationMin": 15,
+    "actualUberPrice": 22.15,
+    "notes": "Airport pickup + rush hour"
+  },
+  {
+    "id": "sf_weekend_night_surge",
+    "description": "SF nightlife area, high weekend surge",
+    "pickup": [-122.4267, 37.7849],
+    "destination": [-122.4089, 37.7853],
+    "timestamp": "2024-06-29T01:30:00.000Z",
+    "distanceKm": 3.2,
+    "durationMin": 12,
+    "actualUberPrice": 32.75,
+    "notes": "Weekend night high surge"
+  },
+  {
+    "id": "east_bay_normal",
+    "description": "Berkeley to Oakland, normal hours",
+    "pickup": [-122.2728, 37.8715],
+    "destination": [-122.2711, 37.8044],
+    "timestamp": "2024-06-27T13:15:00.000Z",
+    "distanceKm": 12.4,
+    "durationMin": 22,
+    "actualUberPrice": 24.80,
+    "notes": "East Bay standard pricing"
+  },
+  {
+    "id": "scu_to_sfo",
+    "description": "Santa Clara University to SFO during rush hour",
+    "pickup": [-121.9444, 37.3496],
+    "destination": [-122.3892, 37.6213],
+    "timestamp": "2025-07-01T16:38:00.000Z",
+    "distanceKm": 69.3,
+    "durationMin": 124.8,
+    "actualUberPrice": 76.97,
+    "notes": "Long distance, airport destination, rush hour"
+  },
+  {
+    "id": "scu_to_apple_park",
+    "description": "Santa Clara University to Apple Park",
+    "pickup": [-121.9444, 37.3496],
+    "destination": [-122.0098, 37.3349],
+    "timestamp": "2025-07-01T16:09:00.000Z",
+    "distanceKm": 8.4,
+    "durationMin": 15.1,
+    "actualUberPrice": 22.92,
+    "notes": "Short distance tech campus route"
+  },
+  {
+    "id": "scu_to_sap_center",
+    "description": "Santa Clara University to SAP Center",
+    "pickup": [-121.9444, 37.3496],
+    "destination": [-121.9010, 37.3326],
+    "timestamp": "2025-07-01T16:08:00.000Z",
+    "distanceKm": 6.0,
+    "durationMin": 10.8,
+    "actualUberPrice": 13.97,
+    "notes": "Short distance local trip"
+  },
+  {
+    "id": "scu_to_palo_alto",
+    "description": "Santa Clara University to Palo Alto Caltrain",
+    "pickup": [-121.9444, 37.3496],
+    "destination": [-122.1633, 37.4436],
+    "timestamp": "2025-07-01T16:41:00.000Z",
+    "distanceKm": 30.8,
+    "durationMin": 55.4,
+    "actualUberPrice": 44.97,
+    "notes": "Medium distance route to transit hub"
+  },
+  {
+    "id": "scu_to_valley_fair",
+    "description": "Santa Clara University to Westfield Valley Fair",
+    "pickup": [-121.9444, 37.3496],
+    "destination": [-121.9458, 37.3254],
+    "timestamp": "2025-07-01T16:19:00.000Z",
+    "distanceKm": 3.8,
+    "durationMin": 6.8,
+    "actualUberPrice": 9.94,
+    "notes": "Very short distance, likely minimum fare"
+  },
+  {
+    "id": "scu_to_fremont_bart",
+    "description": "Santa Clara University to Fremont BART",
+    "pickup": [-121.9444, 37.3496],
+    "destination": [-121.9316, 37.5577],
+    "timestamp": "2025-07-01T16:48:00.000Z",
+    "distanceKm": 32.4,
+    "durationMin": 58.3,
+    "actualUberPrice": 43.95,
+    "notes": "Medium-long distance to transit hub"
+  },
+  {
+    "id": "diridon_to_oak",
+    "description": "San Jose Diridon to Oakland Airport",
+    "pickup": [-121.9026, 37.3297],
+    "destination": [-122.2197, 37.7214],
+    "timestamp": "2025-07-01T17:22:00.000Z",
+    "distanceKm": 72.5,
+    "durationMin": 130.5,
+    "actualUberPrice": 91.90,
+    "notes": "Long distance route to airport"
+  },
+  {
+    "id": "apple_park_to_sfo",
+    "description": "Apple Park to SFO during rush hour",
+    "pickup": [-122.0098, 37.3349],
+    "destination": [-122.3892, 37.6213],
+    "timestamp": "2025-07-01T17:00:00.000Z",
+    "distanceKm": 64.7,
+    "durationMin": 116.5,
+    "actualUberPrice": 77.92,
+    "notes": "Long distance, airport destination, rush hour"
+  },
+  {
+    "id": "apple_park_to_sjc",
+    "description": "Apple Park to San Jose Airport",
+    "pickup": [-122.0098, 37.3349],
+    "destination": [-121.9291, 37.3626],
+    "timestamp": "2025-07-01T16:41:00.000Z",
+    "distanceKm": 10.9,
+    "durationMin": 19.6,
+    "actualUberPrice": 39.94,
+    "notes": "Medium distance to SJC airport"
+  }
+] 

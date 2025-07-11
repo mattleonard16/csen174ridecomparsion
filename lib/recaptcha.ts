@@ -10,9 +10,9 @@
  *    RECAPTCHA_SECRET_KEY=your_secret_key
  */
 
-// Test keys (always pass validation - use for development)
-const TEST_SITE_KEY = '6LfQYHsrAAAAACqE_KWmFb6gasBfKJcgzXCP5AfE'
-const TEST_SECRET_KEY = '6LfQYHsrAAAAACYW6Hi_jlKbuAgR6N4_KLilX4lJ'
+// Google's official test keys (always pass validation - use for development)
+const TEST_SITE_KEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'
+const TEST_SECRET_KEY = '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe'
 
 // Get reCAPTCHA keys from environment
 export const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || TEST_SITE_KEY
@@ -23,21 +23,36 @@ export const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY || TEST_SEC
  *
  * Localhost, 127.0.0.1 and Vercel preview deployments (*.vercel.app) are not
  * usually whitelisted in the reCAPTCHA admin console, so we automatically
- * fall back to Google’s public test key for those hosts to avoid “Invalid
- * domain” errors while still exercising the flow in development/CI.
+ * fall back to Google's public test key for those hosts to avoid "Invalid
+ * domain" errors while still exercising the flow in development/CI.
  */
 export function getRecaptchaSiteKey(): string {
   if (typeof window !== 'undefined') {
     const host = window.location.hostname
+    
+    // Always use test key for development and preview environments
     if (
       host === 'localhost' ||
       host === '127.0.0.1' ||
-      host.endsWith('.vercel.app') // Vercel preview URLs
+      host.endsWith('.vercel.app') || // Vercel preview URLs
+      host.endsWith('.vercel.dev') || // Alternative Vercel domains
+      host.includes('localhost') ||
+      process.env.NODE_ENV === 'development'
     ) {
+      console.log('Using reCAPTCHA test key for development/preview environment:', host)
       return TEST_SITE_KEY
     }
+    
+    // For production domains, only use production key if it's configured
+    if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY !== TEST_SITE_KEY) {
+      console.log('Using production reCAPTCHA key for:', host)
+      return process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+    }
   }
-  return RECAPTCHA_SITE_KEY
+  
+  // Default to test key if no production key is configured
+  console.log('Falling back to reCAPTCHA test key')
+  return TEST_SITE_KEY
 }
 
 /**
@@ -120,16 +135,33 @@ export async function verifyRecaptchaToken(
   error?: string
 }> {
   try {
+    // Get secret key from environment - prefer runtime env over build-time
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY || TEST_SECRET_KEY
+    
+    if (!secretKey) {
+      return {
+        success: false,
+        error: 'reCAPTCHA secret key not configured'
+      }
+    }
+
     const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        secret: RECAPTCHA_SECRET_KEY,
+        secret: secretKey,
         response: token,
       }),
     })
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: `reCAPTCHA API request failed: ${response.status} ${response.statusText}`
+      }
+    }
 
     const data = await response.json()
 
